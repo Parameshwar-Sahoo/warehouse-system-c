@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Warehouse Management System — Interactive Dashboard</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    @keyframes pulse-subtle {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+    .animate-subtle {
+      animation: pulse-subtle 2s infinite ease-in-out;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: var(--card);
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body class="bg-[var(--background)] text-[var(--foreground)] antialiased p-4 md:p-6 min-h-screen">
+  <div class="max-w-7xl mx-auto space-y-6">
+
+    <!-- Top Navigation Header -->
+    <header class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 rounded-xl bg-blue-600/10 text-blue-500 flex items-center justify-center text-2xl font-bold border border-blue-500/20 shadow-inner">
+          📦
+        </div>
+        <div>
+          <h1 class="text-xl md:text-2xl font-bold tracking-tight text-[var(--foreground)] flex items-center gap-2">
+            Smart Warehouse Management System
+            <span class="text-xs px-2.5 py-0.5 rounded-full font-medium bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+              v1.0 LKM Active
+            </span>
+          </h1>
+          <p class="text-sm text-[var(--muted-foreground)]">
+            Linux Character Device Driver (<code class="text-xs font-mono text-cyan-400">/dev/wms_driver</code>) &amp; Modern C++ System
+          </p>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-mono bg-[var(--background)] border border-[var(--border)] text-emerald-400">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+          Driver: READY (Major 238)
+        </span>
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-mono bg-[var(--background)] border border-[var(--border)] text-blue-400">
+          SHM: /wms_telemetry_shm
+        </span>
+        <button id="btn-auto-demo" onclick="runAutomatedDemo()" class="px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider bg-blue-600 hover:bg-blue-500 text-white transition-all shadow-md active:scale-95 flex items-center gap-1.5">
+          <span>⚡</span> Run 5-Stage Demo
+        </button>
+      </div>
+    </header>
+
+    <!-- Telemetry Metric Cards -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      <!-- Card 1 -->
+      <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 shadow-sm">
+        <div class="text-xs font-medium text-[var(--muted-foreground)] uppercase tracking-wider">Driver Status</div>
+        <div id="stat-driver-status" class="mt-2 text-lg font-bold text-emerald-400 flex items-center gap-1.5">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Connected
+        </div>
+        <div class="mt-1 text-[12px] text-[var(--muted-foreground)] font-mono">poll() waiting</div>
+      </div>
+
+      <!-- Card 2 -->
+      <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 shadow-sm">
+        <div class="text-xs font-medium text-[var(--muted-foreground)] uppercase tracking-wider">Ring Buffer</div>
+        <div class="mt-2 text-lg font-bold text-[var(--foreground)] flex items-baseline gap-1">
+          <span id="stat-buffer-occ">0</span>
+          <span class="text-xs text-[var(--muted-foreground)] font-normal">/ 64 slots</span>
+        </div>
+        <div class="w-full bg-[var(--background)] h-1.5 rounded-full mt-2 overflow-hidden border border-[var(--border)]">
+          <div id="buffer-progress" class="bg-cyan-500 h-full w-0 transition-all duration-300"></div>
+        </div>
+      </div>
+
+      <!-- Card 3 -->
+      <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 shadow-sm">
+        <div class="text-xs font-medium text-[var(--muted-foreground)] uppercase tracking-wider">Active Bay Locks</div>
+        <div id="stat-active-locks" class="mt-2 text-xl font-bold text-rose-400">0</div>
+        <div class="mt-1 text-[12px] text-[var(--muted-foreground)]">Solenoids engaged</div>
+      </div>
+
+      <!-- Card 4 -->
+      <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 shadow-sm">
+        <div class="text-xs font-medium text-[var(--muted-foreground)] uppercase tracking-wider">Total Scans</div>
+        <div id="stat-total-scans" class="mt-2 text-xl font-bold text-cyan-400">0</div>
+        <div class="mt-1 text-[12px] text-[var(--muted-foreground)]">Hardware scan events</div>
+      </div>
+
+      <!-- Card 5 -->
+      <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 shadow-sm">
+        <div class="text-xs font-medium text-[var(--muted-foreground)] uppercase tracking-wider">Wh Occupancy</div>
+        <div id="stat-occupancy" class="mt-2 text-xl font-bold text-amber-400">0.0%</div>
+        <div class="mt-1 text-[12px] text-[var(--muted-foreground)]"><span id="stat-stored-items">0</span> / 24 bays filled</div>
+      </div>
+
+      <!-- Card 6 -->
+      <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 shadow-sm">
+        <div class="text-xs font-medium text-[var(--muted-foreground)] uppercase tracking-wider">Orders Fulfilled</div>
+        <div id="stat-fulfilled-orders" class="mt-2 text-xl font-bold text-indigo-400">0</div>
+        <div class="mt-1 text-[12px] text-[var(--muted-foreground)]"><span id="stat-pending-orders">0</span> pending</div>
+      </div>
+    </div>
+
+    <!-- Interactive Operations Bar -->
+    <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-5 shadow-sm space-y-4">
+      <div class="flex items-center justify-between">
+        <h2 class="text-sm font-semibold uppercase tracking-wider text-[var(--foreground)] flex items-center gap-2">
+          <span>🛠️</span> Hardware Simulation &amp; Operator Actions
+        </h2>
+        <span class="text-xs text-[var(--muted-foreground)]">Simulates scanner gates &amp; IOCTL calls</span>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <!-- Action 1: Intake -->
+        <div class="p-3.5 bg-[var(--background)] border border-[var(--border)] rounded-xl space-y-2.5">
+          <div class="text-xs font-bold text-[var(--foreground)] flex items-center justify-between">
+            <span>📥 Gate 1: Cargo Intake</span>
+            <span class="text-[12px] font-mono text-cyan-400">write()</span>
+          </div>
+          <div class="flex gap-2">
+            <select id="select-preset-sku" class="bg-[var(--card)] text-[var(--foreground)] border border-[var(--border)] text-xs rounded-lg px-2.5 py-1.5 flex-1 focus:outline-none focus:border-blue-500">
+              <option value="SKU-ELEC-101|14.5|Server Unit">SKU-ELEC-101 (Electronics, 14.5kg)</option>
+              <option value="SKU-COLD-201|45.0|Vaccine Pack">SKU-COLD-201 (Cold Storage, 45.0kg)</option>
+              <option value="SKU-GEN-301|120.0|Pallet Cargo">SKU-GEN-301 (General Ambient, 120kg)</option>
+              <option value="SKU-HAZ-401|30.0|Solvent Drum">SKU-HAZ-401 (Hazardous, 30.0kg)</option>
+            </select>
+            <button onclick="handleIntakePreset()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold transition active:scale-95">
+              Intake
+            </button>
+          </div>
+        </div>
+
+        <!-- Action 2: Dispatch Order -->
+        <div class="p-3.5 bg-[var(--background)] border border-[var(--border)] rounded-xl space-y-2.5">
+          <div class="text-xs font-bold text-[var(--foreground)] flex items-center justify-between">
+            <span>📤 Gate 2: Dispatch Order</span>
+            <span class="text-[12px] font-mono text-amber-400">processOrder()</span>
+          </div>
+          <div class="flex gap-2">
+            <select id="select-dispatch-sku" class="bg-[var(--card)] text-[var(--foreground)] border border-[var(--border)] text-xs rounded-lg px-2.5 py-1.5 flex-1 focus:outline-none focus:border-blue-500">
+              <option value="">No items currently in stock</option>
+            </select>
+            <button onclick="handleDispatch()" class="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-xs font-semibold transition active:scale-95">
+              Pick &amp; Dispatch
+            </button>
+          </div>
+        </div>
+
+        <!-- Action 3: Hardware Controls -->
+        <div class="p-3.5 bg-[var(--background)] border border-[var(--border)] rounded-xl space-y-2.5">
+          <div class="text-xs font-bold text-[var(--foreground)] flex items-center justify-between">
+            <span>⚡ IOCTL Direct Commands</span>
+            <span class="text-[12px] font-mono text-rose-400">ioctl()</span>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="toggleAllLocks(true)" class="flex-1 px-2.5 py-1.5 bg-rose-600/10 text-rose-400 border border-rose-500/20 hover:bg-rose-600 hover:text-white rounded-lg text-xs font-medium transition">
+              Lock All (IOCTL)
+            </button>
+            <button onclick="toggleAllLocks(false)" class="flex-1 px-2.5 py-1.5 bg-slate-600/10 text-slate-300 border border-slate-500/20 hover:bg-slate-700 hover:text-white rounded-lg text-xs font-medium transition">
+              Unlock All
+            </button>
+            <button onclick="resetDriverBuffer()" class="px-2.5 py-1.5 bg-cyan-600/10 text-cyan-400 border border-cyan-500/20 hover:bg-cyan-600 hover:text-white rounded-lg text-xs font-medium transition" title="Clear Buffer via WMS_IOCTL_RESET_BUFFER">
+              Reset FIFO
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main 24-Bay Rack Layout Grid -->
+    <div class="space-y-4">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div>
+          <h2 class="text-lg font-bold text-[var(--foreground)] flex items-center gap-2">
+            <span>🏢</span> Storage Bay Racks (24 Physical Bays)
+          </h2>
+          <p class="text-xs text-[var(--muted-foreground)]">Click any bay's padlock button to actuate its electromagnetic solenoid via IOCTL</p>
+        </div>
+
+        <!-- Legend -->
+        <div class="flex items-center gap-3 text-xs">
+          <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-emerald-500/20 border border-emerald-500"></span> Empty</span>
+          <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-amber-500/20 border border-amber-500"></span> Occupied</span>
+          <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-rose-500/20 border border-rose-500"></span> Locked (Solenoid)</span>
+        </div>
+      </div>
+
+      <!-- Zone A: Electronics -->
+      <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-4 shadow-sm space-y-3">
+        <div class="flex items-center justify-between border-b border-[var(--border)] pb-2.5">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-cyan-400"></span>
+            <span class="text-xs font-bold uppercase tracking-wider text-cyan-400">Zone A: Electronics &amp; High-Tech</span>
+            <span class="text-[12px] text-[var(--muted-foreground)]">(Max Weight: 100 kg | Bays 1–8)</span>
+          </div>
+          <span id="zone-a-occ" class="text-xs font-mono text-[var(--muted-foreground)]">0/8 occupied</span>
+        </div>
+        <div id="grid-zone-a" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3"></div>
+      </div>
+
+      <!-- Zone B: Cold Storage -->
+      <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-4 shadow-sm space-y-3">
+        <div class="flex items-center justify-between border-b border-[var(--border)] pb-2.5">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-blue-400"></span>
+            <span class="text-xs font-bold uppercase tracking-wider text-blue-400">Zone B: Cold Storage &amp; Perishables</span>
+            <span class="text-[12px] text-[var(--muted-foreground)]">(Max Weight: 250 kg | Bays 9–16)</span>
+          </div>
+          <span id="zone-b-occ" class="text-xs font-mono text-[var(--muted-foreground)]">0/8 occupied</span>
+        </div>
+        <div id="grid-zone-b" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3"></div>
+      </div>
+
+      <!-- Zone C: General Ambient -->
+      <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-4 shadow-sm space-y-3">
+        <div class="flex items-center justify-between border-b border-[var(--border)] pb-2.5">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+            <span class="text-xs font-bold uppercase tracking-wider text-amber-400">Zone C: General &amp; Heavy Cargo</span>
+            <span class="text-[12px] text-[var(--muted-foreground)]">(Max Weight: 500 kg | Bays 17–24)</span>
+          </div>
+          <span id="zone-c-occ" class="text-xs font-mono text-[var(--muted-foreground)]">0/8 occupied</span>
+        </div>
+        <div id="grid-zone-c" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3"></div>
+      </div>
+    </div>
+
+    <!-- Bottom Split: Live Event Stream & POSIX IPC Inspector -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Live Event Stream (2 Cols) -->
+      <div class="lg:col-span-2 bg-[var(--card)] border border-[var(--border)] rounded-2xl p-5 shadow-sm space-y-3 flex flex-col">
+        <div class="flex items-center justify-between">
+          <h3 class="text-sm font-bold text-[var(--foreground)] flex items-center gap-2">
+            <span>📡</span> Live Kernel Event Stream &amp; Scan FIFO
+          </h3>
+          <span class="text-[12px] font-mono text-cyan-400 animate-pulse">● STREAM LIVE</span>
+        </div>
+
+        <div id="event-log-container" class="flex-1 bg-[var(--background)] border border-[var(--border)] rounded-xl p-3.5 font-mono text-xs space-y-2 h-56 overflow-y-auto custom-scrollbar">
+          <div class="text-[var(--muted-foreground)] italic">// Ready for barcode/RFID hardware events...</div>
+        </div>
+      </div>
+
+      <!-- POSIX Shared Memory & Driver Info (1 Col) -->
+      <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-5 shadow-sm space-y-3.5">
+        <h3 class="text-sm font-bold text-[var(--foreground)] flex items-center gap-2">
+          <span>🧠</span> POSIX Shared Memory State
+        </h3>
+        <div class="p-3 bg-[var(--background)] border border-[var(--border)] rounded-xl space-y-2 font-mono text-xs">
+          <div class="flex justify-between">
+            <span class="text-[var(--muted-foreground)]">SHM Segment:</span>
+            <span class="text-cyan-400">/wms_telemetry_shm</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-[var(--muted-foreground)]">Master PID:</span>
+            <span id="shm-pid" class="text-[var(--foreground)]">73753</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-[var(--muted-foreground)]">Active Locks:</span>
+            <span id="shm-locks" class="text-rose-400">0</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-[var(--muted-foreground)]">Last Barcode:</span>
+            <span id="shm-barcode" class="text-amber-400 font-bold">-</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-[var(--muted-foreground)]">Sync Status:</span>
+            <span class="text-emerald-400">mmap() Shared</span>
+          </div>
+        </div>
+
+        <div class="text-xs text-[var(--muted-foreground)] space-y-1">
+          <div class="font-semibold text-[var(--foreground)]">Kernel Architecture:</div>
+          <div>• Dynamic Character Device Major: 238</div>
+          <div>• Ring Buffer Capacity: 64 entries (FIFO)</div>
+          <div>• Wait Queue: <code class="text-[12px] font-mono">wait_event_interruptible</code></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bay Detail Diagnostics Modal -->
+    <div id="bay-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+      <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+        <div class="flex items-center justify-between border-b border-[var(--border)] pb-3">
+          <h3 id="modal-title" class="text-base font-bold text-[var(--foreground)]">Bay Diagnostics</h3>
+          <button onclick="closeModal()" class="text-[var(--muted-foreground)] hover:text-[var(--foreground)] text-lg font-bold">✕</button>
+        </div>
+        <div id="modal-content" class="space-y-3 text-xs font-mono"></div>
+        <div class="flex gap-2 pt-2">
+          <button id="modal-toggle-lock-btn" class="flex-1 px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold transition">
+            Toggle Lock
+          </button>
+          <button onclick="closeModal()" class="px-4 py-2 bg-[var(--background)] hover:bg-[var(--border)] text-[var(--foreground)] rounded-xl text-xs font-medium border border-[var(--border)] transition">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // System State Model matching Modern C++ InventoryManager & wms_driver
+    const WMS = {
+      bufferCapacity: 64,
+      bufferOccupancy: 0,
+      totalScans: 0,
+      droppedEvents: 0,
+      ordersFulfilled: 0,
+      pendingOrders: 0,
+      lastBarcode: "-",
+      bays: []
+    };
+
+    // Initialize 24 Storage Bays
+    function initBays() {
+      WMS.bays = [];
+      for (let i = 1; i <= 24; ++i) {
+        let zone = "ZONE-A";
+        let maxWeight = 100.0;
+        let category = "ELECTRONICS";
+        if (i >= 9 && i <= 16) {
+          zone = "ZONE-B";
+          maxWeight = 250.0;
+          category = "PERISHABLE";
+        } else if (i >= 17 && i <= 24) {
+          zone = "ZONE-C";
+          maxWeight = 500.0;
+          category = "GENERAL";
+        }
+        WMS.bays.push({
+          id: i,
+          zone: zone,
+          category: category,
+          maxWeight: maxWeight,
+          currentWeight: 0.0,
+          isLocked: false,
+          isOccupied: false,
+          item: null
+        });
+      }
+    }
+
+    // Render Bay Grids
+    function renderGrids() {
+      const gridA = document.getElementById("grid-zone-a");
+      const gridB = document.getElementById("grid-zone-b");
+      const gridC = document.getElementById("grid-zone-c");
+
+      gridA.innerHTML = "";
+      gridB.innerHTML = "";
+      gridC.innerHTML = "";
+
+      let occA = 0, occB = 0, occC = 0;
+
+      WMS.bays.forEach(bay => {
+        let container = gridA;
+        if (bay.id >= 9 && bay.id <= 16) {
+          container = gridB;
+          if (bay.isOccupied) occB++;
+        } else if (bay.id >= 17 && bay.id <= 24) {
+          container = gridC;
+          if (bay.isOccupied) occC++;
+        } else {
+          if (bay.isOccupied) occA++;
+        }
+
+        const card = document.createElement("div");
+        card.className = getBayCardClasses(bay);
+
+        card.innerHTML = `
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-xs">#${bay.id}</span>
+            <button onclick="toggleBayLock(event, ${bay.id})" title="Actuate Bay Lock via IOCTL" class="p-1 rounded hover:bg-black/20 text-xs transition">
+              ${bay.isLocked ? '🔒' : '🔓'}
+            </button>
+          </div>
+          <div class="my-1.5 text-center cursor-pointer" onclick="openBayModal(${bay.id})">
+            ${bay.isOccupied ? `
+              <div class="text-xs font-bold truncate text-[var(--foreground)]">${bay.item.sku}</div>
+              <div class="text-[12px] text-[var(--muted-foreground)] font-mono">${bay.currentWeight}kg</div>
+            ` : `
+              <div class="text-[12px] uppercase tracking-wider text-emerald-400 font-semibold py-1">FREE</div>
+              <div class="text-[12px] text-[var(--muted-foreground)]">Max ${bay.maxWeight}kg</div>
+            `}
+          </div>
+          <div class="text-[12px] font-mono text-center pt-1 border-t border-[var(--border)] flex justify-between items-center text-[var(--muted-foreground)]">
+            <span>${bay.isLocked ? '<span class="text-rose-400 font-bold">LOCKED</span>' : (bay.isOccupied ? 'OCCUPIED' : 'READY')}</span>
+            <span class="text-[12px]">${bay.category.slice(0, 4)}</span>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+
+      document.getElementById("zone-a-occ").innerText = `${occA}/8 occupied`;
+      document.getElementById("zone-b-occ").innerText = `${occB}/8 occupied`;
+      document.getElementById("zone-c-occ").innerText = `${occC}/8 occupied`;
+
+      updateTelemetry();
+      updateDispatchSelect();
+    }
+
+    function getBayCardClasses(bay) {
+      let base = "p-2.5 rounded-xl border transition-all duration-200 shadow-sm flex flex-col justify-between text-xs ";
+      if (bay.isLocked) {
+        return base + "bg-rose-500/10 border-rose-500/40 text-rose-300 ring-1 ring-rose-500/20";
+      } else if (bay.isOccupied) {
+        return base + "bg-amber-500/10 border-amber-500/40 text-amber-200";
+      } else {
+        return base + "bg-[var(--background)] border-[var(--border)] hover:border-emerald-500/50";
+      }
+    }
+
+    function updateTelemetry() {
+      const activeLocks = WMS.bays.filter(b => b.isLocked).length;
+      const occupiedCount = WMS.bays.filter(b => b.isOccupied).length;
+      const occPercent = ((occupiedCount / 24) * 100).toFixed(1);
+
+      document.getElementById("stat-buffer-occ").innerText = WMS.bufferOccupancy;
+      document.getElementById("buffer-progress").style.width = `${(WMS.bufferOccupancy / 64) * 100}%`;
+      document.getElementById("stat-active-locks").innerText = activeLocks;
+      document.getElementById("stat-total-scans").innerText = WMS.totalScans;
+      document.getElementById("stat-occupancy").innerText = `${occPercent}%`;
+      document.getElementById("stat-stored-items").innerText = occupiedCount;
+      document.getElementById("stat-fulfilled-orders").innerText = WMS.ordersFulfilled;
+
+      document.getElementById("shm-locks").innerText = activeLocks;
+      document.getElementById("shm-barcode").innerText = WMS.lastBarcode;
+    }
+
+    function updateDispatchSelect() {
+      const sel = document.getElementById("select-dispatch-sku");
+      const occupiedBays = WMS.bays.filter(b => b.isOccupied);
+      if (occupiedBays.length === 0) {
+        sel.innerHTML = '<option value="">No items currently in stock</option>';
+      } else {
+        const uniqueSkus = [...new Set(occupiedBays.map(b => b.item.sku))];
+        sel.innerHTML = uniqueSkus.map(sku => `<option value="${sku}">${sku}</option>`).join("");
+      }
+    }
+
+    function logEvent(action, text, color = "text-[var(--foreground)]") {
+      const container = document.getElementById("event-log-container");
+      const now = new Date().toTimeString().split(" ")[0];
+      const entry = document.createElement("div");
+      entry.className = "flex items-start gap-2 " + color;
+      entry.innerHTML = `<span class="text-[var(--muted-foreground)]">[${now}]</span> <span class="font-bold">${action}:</span> <span>${text}</span>`;
+      container.appendChild(entry);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    // Intake Item Simulation
+    function intakeItem(barcode, weight, name, category) {
+      WMS.totalScans++;
+      WMS.lastBarcode = barcode;
+      WMS.bufferOccupancy = Math.min(64, WMS.bufferOccupancy + 1);
+
+      // Find appropriate bay based on category
+      let bay = null;
+      if (category === "ELECTRONICS") {
+        bay = WMS.bays.slice(0, 8).find(b => !b.isOccupied && !b.isLocked && weight <= b.maxWeight);
+      } else if (category === "PERISHABLE") {
+        bay = WMS.bays.slice(8, 16).find(b => !b.isOccupied && !b.isLocked && weight <= b.maxWeight);
+      } else {
+        bay = WMS.bays.slice(16, 24).find(b => !b.isOccupied && !b.isLocked && weight <= b.maxWeight);
+      }
+
+      // Fallback
+      if (!bay) {
+        bay = WMS.bays.find(b => !b.isOccupied && !b.isLocked && weight <= b.maxWeight);
+      }
+
+      if (!bay) {
+        logEvent("REJECTED", `Intake capacity full for ${barcode} (${weight}kg)`, "text-rose-400 font-bold");
+        return null;
+      }
+
+      // Momentary bay lock during placement
+      bay.isLocked = true;
+      renderGrids();
+
+      setTimeout(() => {
+        bay.isOccupied = true;
+        bay.currentWeight = weight;
+        bay.item = { sku: barcode, name: name, category: category, weight: weight };
+        bay.isLocked = false;
+        WMS.bufferOccupancy = Math.max(0, WMS.bufferOccupancy - 1);
+        logEvent("INTAKE", `${barcode} (${weight}kg) stored in Bay #${bay.id} (${bay.zone})`, "text-emerald-400");
+        renderGrids();
+      }, 350);
+
+      return bay;
+    }
+
+    function handleIntakePreset() {
+      const val = document.getElementById("select-preset-sku").value;
+      const [sku, weight, name] = val.split("|");
+      let cat = "GENERAL";
+      if (sku.includes("ELEC")) cat = "ELECTRONICS";
+      else if (sku.includes("COLD")) cat = "PERISHABLE";
+      intakeItem(sku, parseFloat(weight), name, cat);
+    }
+
+    // Dispatch Item Simulation
+    function handleDispatch() {
+      const sku = document.getElementById("select-dispatch-sku").value;
+      if (!sku) return;
+
+      const bay = WMS.bays.find(b => b.isOccupied && b.item && b.item.sku === sku);
+      if (!bay) {
+        logEvent("ERROR", `SKU ${sku} not available in inventory`, "text-rose-400");
+        return;
+      }
+
+      // Safety Interlock Check
+      if (bay.isLocked) {
+        logEvent("SAFETY INTERLOCK", `Pick BLOCKED! Bay #${bay.id} is physically LOCKED by solenoid!`, "text-rose-400 font-bold");
+        alert(`Safety Interlock Active: Bay #${bay.id} is LOCKED! Unlock it via IOCTL before picking.`);
+        return;
+      }
+
+      bay.isOccupied = false;
+      bay.currentWeight = 0;
+      bay.item = null;
+      WMS.ordersFulfilled++;
+      logEvent("DISPATCH", `Order fulfilled: ${sku} retrieved from Bay #${bay.id}`, "text-amber-400");
+      renderGrids();
+    }
+
+    // IOCTL Bay Locking
+    function toggleBayLock(e, bayId) {
+      if (e) e.stopPropagation();
+      const bay = WMS.bays.find(b => b.id === bayId);
+      if (bay) {
+        bay.isLocked = !bay.isLocked;
+        logEvent("IOCTL", `WMS_IOCTL_SET_BAY_LOCK -> Bay #${bayId} set to ${bay.isLocked ? 'LOCKED (1)' : 'UNLOCKED (0)'}`, bay.isLocked ? "text-rose-400" : "text-emerald-400");
+        renderGrids();
+      }
+    }
+
+    function toggleAllLocks(lock) {
+      WMS.bays.forEach(b => b.isLocked = lock);
+      logEvent("IOCTL", `WMS_IOCTL_SET_BAY_LOCK broadcast -> All 24 bays set to ${lock ? 'LOCKED' : 'UNLOCKED'}`, lock ? "text-rose-400" : "text-emerald-400");
+      renderGrids();
+    }
+
+    function resetDriverBuffer() {
+      WMS.bufferOccupancy = 0;
+      WMS.droppedEvents = 0;
+      logEvent("IOCTL", `WMS_IOCTL_RESET_BUFFER -> Kernel ring buffer flushed to 0`, "text-cyan-400 font-bold");
+      renderGrids();
+    }
+
+    // Diagnostics Modal
+    let selectedModalBay = null;
+    function openBayModal(bayId) {
+      selectedModalBay = WMS.bays.find(b => b.id === bayId);
+      if (!selectedModalBay) return;
+
+      document.getElementById("modal-title").innerText = `Storage Bay #${selectedModalBay.id} Diagnostics`;
+      const content = document.getElementById("modal-content");
+      content.innerHTML = `
+        <div class="flex justify-between py-1 border-b border-[var(--border)]"><span class="text-[var(--muted-foreground)]">Zone:</span><span>${selectedModalBay.zone}</span></div>
+        <div class="flex justify-between py-1 border-b border-[var(--border)]"><span class="text-[var(--muted-foreground)]">Category:</span><span>${selectedModalBay.category}</span></div>
+        <div class="flex justify-between py-1 border-b border-[var(--border)]"><span class="text-[var(--muted-foreground)]">Capacity:</span><span>${selectedModalBay.maxWeight} kg</span></div>
+        <div class="flex justify-between py-1 border-b border-[var(--border)]"><span class="text-[var(--muted-foreground)]">Current Load:</span><span>${selectedModalBay.currentWeight} kg</span></div>
+        <div class="flex justify-between py-1 border-b border-[var(--border)]"><span class="text-[var(--muted-foreground)]">Lock State:</span><span class="${selectedModalBay.isLocked ? 'text-rose-400 font-bold' : 'text-emerald-400'}">${selectedModalBay.isLocked ? 'LOCKED (Solenoid Engaged)' : 'UNLOCKED'}</span></div>
+        <div class="flex justify-between py-1"><span class="text-[var(--muted-foreground)]">Stored SKU:</span><span class="text-amber-400 font-bold">${selectedModalBay.item ? selectedModalBay.item.sku : 'None (Empty)'}</span></div>
+      `;
+
+      const btn = document.getElementById("modal-toggle-lock-btn");
+      btn.innerText = selectedModalBay.isLocked ? "Disengage Lock (IOCTL)" : "Engage Solenoid Lock (IOCTL)";
+      btn.onclick = () => {
+        toggleBayLock(null, selectedModalBay.id);
+        openBayModal(selectedModalBay.id);
+      };
+
+      const modal = document.getElementById("bay-modal");
+      modal.classList.remove("hidden");
+      modal.classList.add("flex");
+    }
+
+    function closeModal() {
+      const modal = document.getElementById("bay-modal");
+      modal.classList.add("hidden");
+      modal.classList.remove("flex");
+    }
+
+    // Automated 5-Stage Demo Simulation
+    function runAutomatedDemo() {
+      const btn = document.getElementById("btn-auto-demo");
+      btn.disabled = true;
+      btn.classList.add("opacity-50");
+
+      logEvent("DEMO", ">>> STARTING AUTOMATED 5-STAGE PIPELINE <<<", "text-cyan-400 font-bold");
+
+      // Ingest test cargo
+      const items = [
+        ["SKU-ELEC-101", 14.0, "Core Board", "ELECTRONICS"],
+        ["SKU-ELEC-102", 18.0, "GPU Cluster", "ELECTRONICS"],
+        ["SKU-COLD-201", 45.0, "Vaccines", "PERISHABLE"],
+        ["SKU-COLD-202", 60.0, "Bio Reagents", "PERISHABLE"],
+        ["SKU-GEN-301", 120.0, "Heavy Steel", "GENERAL"],
+        ["SKU-HAZ-401", 28.0, "Solvents", "GENERAL"]
+      ];
+
+      items.forEach((item, idx) => {
+        setTimeout(() => {
+          intakeItem(item[0], item[1], item[2], item[3]);
+        }, idx * 450);
+      });
+
+      // Safety lock test
+      setTimeout(() => {
+        logEvent("DEMO", "Testing Safety Interlock: Locking Bay #1 via IOCTL...", "text-rose-400 font-bold");
+        toggleBayLock(null, 1);
+      }, items.length * 450 + 500);
+
+      // Attempt pick from locked bay
+      setTimeout(() => {
+        logEvent("DEMO", "Attempting order pick of SKU-ELEC-101 from Locked Bay #1...", "text-amber-400");
+        logEvent("SAFETY", "BLOCKED: Safety interlock active! Cannot pick from locked bay.", "text-rose-400 font-bold");
+      }, items.length * 450 + 1200);
+
+      // Unlock bay and fulfill
+      setTimeout(() => {
+        logEvent("DEMO", "Disengaging Lock on Bay #1 via IOCTL...", "text-emerald-400");
+        toggleBayLock(null, 1);
+      }, items.length * 450 + 2000);
+
+      setTimeout(() => {
+        logEvent("DEMO", "Retrying order pick: SKU-ELEC-101 fulfilled successfully!", "text-emerald-400 font-bold");
+        const bay1 = WMS.bays.find(b => b.id === 1);
+        if (bay1) {
+          bay1.isOccupied = false;
+          bay1.item = null;
+          bay1.currentWeight = 0;
+          WMS.ordersFulfilled++;
+          renderGrids();
+        }
+        btn.disabled = false;
+        btn.classList.remove("opacity-50");
+        logEvent("DEMO", ">>> AUTOMATED PIPELINE COMPLETE <<<", "text-cyan-400 font-bold");
+      }, items.length * 450 + 2800);
+    }
+
+    // Initialize on page load
+    initBays();
+    renderGrids();
+  </script>
+</body>
+</html>
