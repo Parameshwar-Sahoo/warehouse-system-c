@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 800" width="100%" height="100%" style="background:#0f172a; font-family:'Segoe UI',system-ui,sans-serif;">
+  <defs>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.4"/>
+    </filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#38bdf8" />
+    </marker>
+    <marker id="arrow-emerald" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#10b981" />
+    </marker>
+    <marker id="arrow-rose" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#f43f5e" />
+    </marker>
+  </defs>
+
+  <text x="550" y="40" text-anchor="middle" fill="#38bdf8" font-size="22" font-weight="bold" letter-spacing="1">WAREHOUSE MANAGEMENT SYSTEM — UML SEQUENCE DIAGRAM</text>
+  <text x="550" y="65" text-anchor="middle" fill="#94a3b8" font-size="13">End-to-End Scan Ingestion, Kernel Ring Buffer, IOCTL Solenoid Locking &amp; POSIX IPC</text>
+
+  <!-- Lifeline Columns -->
+  <!-- 1. Scanner -->
+  <g transform="translate(40, 100)">
+    <rect width="120" height="40" rx="8" fill="#1e293b" stroke="#38bdf8" stroke-width="1.5"/>
+    <text x="60" y="25" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="bold">Scanner Gate</text>
+    <line x1="60" y1="40" x2="60" y2="650" stroke="#334155" stroke-dasharray="4,4"/>
+  </g>
+
+  <!-- 2. Linux Kernel Driver -->
+  <g transform="translate(200, 100)">
+    <rect width="150" height="40" rx="8" fill="#1e293b" stroke="#f43f5e" stroke-width="1.5"/>
+    <text x="75" y="25" text-anchor="middle" fill="#f43f5e" font-size="12" font-weight="bold">/dev/wms_driver</text>
+    <line x1="75" y1="40" x2="75" y2="650" stroke="#334155" stroke-dasharray="4,4"/>
+  </g>
+
+  <!-- 3. HAL (LinuxCharDevice) -->
+  <g transform="translate(390, 100)">
+    <rect width="140" height="40" rx="8" fill="#1e293b" stroke="#38bdf8" stroke-width="1.5"/>
+    <text x="70" y="25" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="bold">LinuxCharDevice</text>
+    <line x1="70" y1="40" x2="70" y2="650" stroke="#334155" stroke-dasharray="4,4"/>
+  </g>
+
+  <!-- 4. C++ Worker Thread -->
+  <g transform="translate(570, 100)">
+    <rect width="140" height="40" rx="8" fill="#1e293b" stroke="#eab308" stroke-width="1.5"/>
+    <text x="70" y="25" text-anchor="middle" fill="#eab308" font-size="12" font-weight="bold">C++ Worker</text>
+    <line x1="70" y1="40" x2="70" y2="650" stroke="#334155" stroke-dasharray="4,4"/>
+  </g>
+
+  <!-- 5. InventoryManager -->
+  <g transform="translate(750, 100)">
+    <rect width="150" height="40" rx="8" fill="#1e293b" stroke="#10b981" stroke-width="1.5"/>
+    <text x="75" y="25" text-anchor="middle" fill="#10b981" font-size="12" font-weight="bold">InventoryManager</text>
+    <line x1="75" y1="40" x2="75" y2="650" stroke="#334155" stroke-dasharray="4,4"/>
+  </g>
+
+  <!-- 6. Bay Solenoid & SHM -->
+  <g transform="translate(940, 100)">
+    <rect width="130" height="40" rx="8" fill="#1e293b" stroke="#a855f7" stroke-width="1.5"/>
+    <text x="65" y="25" text-anchor="middle" fill="#a855f7" font-size="12" font-weight="bold">Bay &amp; POSIX SHM</text>
+    <line x1="65" y1="40" x2="65" y2="650" stroke="#334155" stroke-dasharray="4,4"/>
+  </g>
+
+  <!-- Sequence Steps -->
+  <!-- Step 1: Hardware Scan -->
+  <line x1="100" y1="180" x2="270" y2="180" stroke="#38bdf8" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="185" y="172" text-anchor="middle" fill="#e2e8f0" font-size="11" font-weight="semibold">1. Hardware scan telemetry (RFID, weight)</text>
+
+  <!-- Step 2: Enqueue into ring buffer & wake waitqueue -->
+  <rect x="260" y="200" width="30" height="40" rx="4" fill="#334155"/>
+  <text x="300" y="218" fill="#94a3b8" font-size="10" font-family="monospace">Enqueue into Ring Buffer (FIFO 64)</text>
+  <text x="300" y="232" fill="#38bdf8" font-size="10" font-family="monospace">wake_up_interruptible(&amp;read_wait)</text>
+
+  <!-- Step 3: poll / read -->
+  <line x1="640" y1="260" x2="465" y2="260" stroke="#eab308" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="550" y="252" text-anchor="middle" fill="#e2e8f0" font-size="11">2. readEvent(timeoutMs=200)</text>
+
+  <line x1="460" y1="290" x2="280" y2="290" stroke="#38bdf8" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="370" y="282" text-anchor="middle" fill="#e2e8f0" font-size="11">3. poll() &amp; read() syscall</text>
+
+  <!-- Step 4: copy_to_user -->
+  <line x1="275" y1="330" x2="635" y2="330" stroke="#10b981" stroke-width="2" stroke-dasharray="4,4" marker-end="url(#arrow-emerald)"/>
+  <text x="450" y="322" text-anchor="middle" fill="#10b981" font-size="11">4. copy_to_user(&amp;wms_scan_event_t)</text>
+
+  <!-- Step 5: Intake processing -->
+  <line x1="640" y1="370" x2="820" y2="370" stroke="#eab308" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="730" y="362" text-anchor="middle" fill="#e2e8f0" font-size="11">5. intakeItemFromScan(event)</text>
+
+  <rect x="815" y="385" width="20" height="35" rx="3" fill="#047857"/>
+  <text x="845" y="405" fill="#10b981" font-size="10" font-family="monospace">Zone route &amp; allocate Bay #1</text>
+
+  <!-- Step 6: IOCTL Bay Lock -->
+  <line x1="640" y1="440" x2="465" y2="440" stroke="#f43f5e" stroke-width="2" marker-end="url(#arrow-rose)"/>
+  <text x="550" y="432" text-anchor="middle" fill="#f43f5e" font-size="11">6. setBayLock(bayId=1, lock=true)</text>
+
+  <line x1="460" y1="465" x2="280" y2="465" stroke="#f43f5e" stroke-width="2" marker-end="url(#arrow-rose)"/>
+  <text x="370" y="457" text-anchor="middle" fill="#f43f5e" font-size="11">ioctl(WMS_IOCTL_SET_BAY_LOCK, 1, 1)</text>
+
+  <line x1="275" y1="495" x2="1000" y2="495" stroke="#f43f5e" stroke-width="2" stroke-dasharray="3,3" marker-end="url(#arrow-rose)"/>
+  <text x="640" y="488" text-anchor="middle" fill="#f43f5e" font-size="11">Electromagnetic solenoid engaged</text>
+
+  <!-- Step 7: Deposit Cargo & Release Lock -->
+  <line x1="640" y1="540" x2="820" y2="540" stroke="#10b981" stroke-width="2" marker-end="url(#arrow-emerald)"/>
+  <text x="730" y="532" text-anchor="middle" fill="#10b981" font-size="11">7. Bay #1 status -> OCCUPIED</text>
+
+  <line x1="640" y1="580" x2="280" y2="580" stroke="#38bdf8" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="460" y="572" text-anchor="middle" fill="#38bdf8" font-size="11">ioctl(WMS_IOCTL_SET_BAY_LOCK, 1, 0) [Unlock]</text>
+
+  <!-- Step 8: Update POSIX Shared Memory -->
+  <line x1="640" y1="630" x2="1000" y2="630" stroke="#a855f7" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="820" y="622" text-anchor="middle" fill="#a855f7" font-size="11">8. updateTelemetry() via mmap() to /wms_telemetry_shm</text>
+</svg>

@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 650" width="100%" height="100%" style="background:#0f172a; font-family:'Segoe UI',system-ui,sans-serif;">
+  <defs>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.4"/>
+    </filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#38bdf8" />
+    </marker>
+    <marker id="arrow-emerald" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#10b981" />
+    </marker>
+    <marker id="arrow-rose" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#f43f5e" />
+    </marker>
+  </defs>
+
+  <text x="500" y="40" text-anchor="middle" fill="#38bdf8" font-size="22" font-weight="bold" letter-spacing="1">STORAGE BAY OPERATIONAL LIFECYCLE — STATE MACHINE</text>
+  <text x="500" y="65" text-anchor="middle" fill="#94a3b8" font-size="13">Hardware Solenoid States, Cargo Transitions, and Pick Safety Interlocks</text>
+
+  <!-- Initial State Dot -->
+  <circle cx="120" cy="180" r="14" fill="#38bdf8" filter="url(#shadow)"/>
+
+  <!-- State 1: EMPTY_UNLOCKED -->
+  <g transform="translate(200, 145)" filter="url(#shadow)">
+    <rect width="180" height="70" rx="10" fill="#1e293b" stroke="#10b981" stroke-width="2"/>
+    <text x="90" y="32" text-anchor="middle" fill="#10b981" font-size="14" font-weight="bold">EMPTY_UNLOCKED</text>
+    <text x="90" y="52" text-anchor="middle" fill="#94a3b8" font-size="11">Bay Free / Sensor Ready</text>
+  </g>
+
+  <!-- State 2: LOCKING_FOR_INTAKE -->
+  <g transform="translate(480, 145)" filter="url(#shadow)">
+    <rect width="200" height="70" rx="10" fill="#1e293b" stroke="#f43f5e" stroke-width="2"/>
+    <text x="100" y="32" text-anchor="middle" fill="#f43f5e" font-size="14" font-weight="bold">LOCKING_FOR_INTAKE</text>
+    <text x="100" y="52" text-anchor="middle" fill="#94a3b8" font-size="11">Solenoid Lock Engaged</text>
+  </g>
+
+  <!-- State 3: OCCUPIED_LOCKED -->
+  <g transform="translate(760, 145)" filter="url(#shadow)">
+    <rect width="180" height="70" rx="10" fill="#1e293b" stroke="#eab308" stroke-width="2"/>
+    <text x="90" y="32" text-anchor="middle" fill="#eab308" font-size="14" font-weight="bold">OCCUPIED_LOCKED</text>
+    <text x="90" y="52" text-anchor="middle" fill="#94a3b8" font-size="11">Weight Scale Settled</text>
+  </g>
+
+  <!-- State 4: OCCUPIED_SECURE -->
+  <g transform="translate(760, 360)" filter="url(#shadow)">
+    <rect width="180" height="70" rx="10" fill="#1e293b" stroke="#38bdf8" stroke-width="2"/>
+    <text x="90" y="32" text-anchor="middle" fill="#38bdf8" font-size="14" font-weight="bold">OCCUPIED_SECURE</text>
+    <text x="90" y="52" text-anchor="middle" fill="#94a3b8" font-size="11">Normal Holding State</text>
+  </g>
+
+  <!-- State 5: PICKING_IN_PROGRESS -->
+  <g transform="translate(360, 360)" filter="url(#shadow)">
+    <rect width="210" height="70" rx="10" fill="#1e293b" stroke="#a855f7" stroke-width="2"/>
+    <text x="105" y="32" text-anchor="middle" fill="#a855f7" font-size="14" font-weight="bold">PICKING_IN_PROGRESS</text>
+    <text x="105" y="52" text-anchor="middle" fill="#94a3b8" font-size="11">Customer Order Fulfilling</text>
+  </g>
+
+  <!-- State 6: MAINTENANCE_LOCKED -->
+  <g transform="translate(560, 520)" filter="url(#shadow)">
+    <rect width="200" height="70" rx="10" fill="#1e293b" stroke="#f43f5e" stroke-width="2" stroke-dasharray="4,4"/>
+    <text x="100" y="32" text-anchor="middle" fill="#f43f5e" font-size="14" font-weight="bold">MAINTENANCE_LOCKED</text>
+    <text x="100" y="52" text-anchor="middle" fill="#94a3b8" font-size="11">Safety Lock: Order Pick Blocked</text>
+  </g>
+
+  <!-- Transitions -->
+  <!-- Start -> Empty -->
+  <line x1="134" y1="180" x2="195" y2="180" stroke="#38bdf8" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Empty -> Locking -->
+  <line x1="380" y1="180" x2="475" y2="180" stroke="#38bdf8" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="430" y="168" text-anchor="middle" fill="#e2e8f0" font-size="10">Scan Detected</text>
+
+  <!-- Locking -> Occupied Locked -->
+  <line x1="680" y1="180" x2="755" y2="180" stroke="#38bdf8" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="720" y="168" text-anchor="middle" fill="#e2e8f0" font-size="10">Pallet Placed</text>
+
+  <!-- Occupied Locked -> Occupied Secure -->
+  <line x1="850" y1="215" x2="850" y2="355" stroke="#10b981" stroke-width="2" marker-end="url(#arrow-emerald)"/>
+  <text x="855" y="285" fill="#10b981" font-size="10">Solenoid Released</text>
+
+  <!-- Occupied Secure -> Picking -->
+  <line x1="760" y1="395" x2="575" y2="395" stroke="#a855f7" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="667" y="385" text-anchor="middle" fill="#e2e8f0" font-size="10">Dispatch Request</text>
+
+  <!-- Picking -> Empty -->
+  <path d="M 360 395 L 290 395 L 290 220" stroke="#10b981" stroke-width="2" fill="none" marker-end="url(#arrow-emerald)"/>
+  <text x="280" y="310" text-anchor="end" fill="#10b981" font-size="10">Item Picked &amp; Cleared</text>
+
+  <!-- Maintenance Transitions -->
+  <path d="M 850 430 L 850 555 L 765 555" stroke="#f43f5e" stroke-width="2" stroke-dasharray="3,3" fill="none" marker-end="url(#arrow-rose)"/>
+  <text x="860" y="495" fill="#f43f5e" font-size="10">IOCTL Lock (Emergency)</text>
+
+  <line x1="560" y1="555" x2="465" y2="555" stroke="#38bdf8" stroke-width="2" stroke-dasharray="3,3"/>
+  <path d="M 465 555 L 465 470 L 760 470 L 760 435" stroke="#38bdf8" stroke-width="2" stroke-dasharray="3,3" fill="none" marker-end="url(#arrow)"/>
+  <text x="510" y="545" text-anchor="middle" fill="#38bdf8" font-size="10">Technician Clear (IOCTL Unlock)</text>
+</svg>

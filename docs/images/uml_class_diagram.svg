@@ -1,0 +1,179 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 820" width="100%" height="100%" style="background:#0f172a; font-family:'Segoe UI',system-ui,sans-serif;">
+  <defs>
+    <linearGradient id="grad-iface" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0284c7" />
+      <stop offset="100%" stop-color="#0369a1" />
+    </linearGradient>
+    <linearGradient id="grad-core" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#059669" />
+      <stop offset="100%" stop-color="#047857" />
+    </linearGradient>
+    <linearGradient id="grad-sys" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7c3aed" />
+      <stop offset="100%" stop-color="#6d28d9" />
+    </linearGradient>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+
+  <text x="550" y="40" text-anchor="middle" fill="#38bdf8" font-size="22" font-weight="bold" letter-spacing="1">WAREHOUSE MANAGEMENT SYSTEM — UML CLASS DIAGRAM</text>
+  <text x="550" y="65" text-anchor="middle" fill="#94a3b8" font-size="13">Object-Oriented Architecture, Hardware Abstraction Layer &amp; POSIX IPC</text>
+
+  <!-- 1. IDeviceDriver (Interface) -->
+  <g transform="translate(60, 100)" filter="url(#shadow)">
+    <rect width="320" height="230" rx="8" fill="#1e293b" stroke="#38bdf8" stroke-width="2"/>
+    <path d="M 0 0 L 320 0 L 320 45 L 0 45 Z" fill="url(#grad-iface)" rx="8"/>
+    <text x="160" y="22" text-anchor="middle" fill="#e0f2fe" font-size="12" font-style="italic">&lt;&lt;interface&gt;&gt;</text>
+    <text x="160" y="38" text-anchor="middle" fill="#ffffff" font-size="15" font-weight="bold">IDeviceDriver</text>
+    <!-- Methods -->
+    <text x="15" y="70" fill="#94a3b8" font-size="12" font-family="monospace">+ connect() : bool</text>
+    <text x="15" y="90" fill="#94a3b8" font-size="12" font-family="monospace">+ disconnect() : void</text>
+    <text x="15" y="110" fill="#94a3b8" font-size="12" font-family="monospace">+ readEvent(out wms_scan_event_t, timeout) : bool</text>
+    <text x="15" y="130" fill="#94a3b8" font-size="12" font-family="monospace">+ setBayLock(bayId, lock) : bool</text>
+    <text x="15" y="150" fill="#94a3b8" font-size="12" font-family="monospace">+ getBayLock(bayId, out locked) : bool</text>
+    <text x="15" y="170" fill="#94a3b8" font-size="12" font-family="monospace">+ getStatus(out wms_device_status_t) : bool</text>
+    <text x="15" y="190" fill="#94a3b8" font-size="12" font-family="monospace">+ simulateScan(event) : bool</text>
+    <text x="15" y="210" fill="#94a3b8" font-size="12" font-family="monospace">+ resetBuffer() : bool</text>
+  </g>
+
+  <!-- 2. LinuxCharDevice -->
+  <g transform="translate(60, 390)" filter="url(#shadow)">
+    <rect width="320" height="180" rx="8" fill="#1e293b" stroke="#0ea5e9" stroke-width="1.5"/>
+    <rect width="320" height="35" rx="8" fill="#0369a1"/>
+    <text x="160" y="23" text-anchor="middle" fill="#ffffff" font-size="14" font-weight="bold">LinuxCharDevice</text>
+    <!-- Attributes -->
+    <text x="15" y="55" fill="#f43f5e" font-size="11" font-family="monospace">- int fd_</text>
+    <text x="15" y="70" fill="#f43f5e" font-size="11" font-family="monospace">- string devicePath_ (/dev/wms_driver)</text>
+    <text x="15" y="85" fill="#f43f5e" font-size="11" font-family="monospace">- atomic&lt;bool&gt; isConnected_</text>
+    <line x1="0" y1="95" x2="320" y2="95" stroke="#334155" stroke-width="1"/>
+    <!-- Methods -->
+    <text x="15" y="115" fill="#94a3b8" font-size="11" font-family="monospace">+ connect() : bool (open, O_RDWR)</text>
+    <text x="15" y="135" fill="#94a3b8" font-size="11" font-family="monospace">+ readEvent(...) : bool (poll, read)</text>
+    <text x="15" y="155" fill="#94a3b8" font-size="11" font-family="monospace">+ setBayLock(...) : bool (ioctl)</text>
+    <text x="15" y="170" fill="#94a3b8" font-size="11" font-family="monospace">+ getStatus(...) : bool (ioctl)</text>
+  </g>
+
+  <!-- 3. SimulatedDevice -->
+  <g transform="translate(60, 610)" filter="url(#shadow)">
+    <rect width="320" height="170" rx="8" fill="#1e293b" stroke="#0ea5e9" stroke-width="1.5"/>
+    <rect width="320" height="35" rx="8" fill="#0369a1"/>
+    <text x="160" y="23" text-anchor="middle" fill="#ffffff" font-size="14" font-weight="bold">SimulatedDevice (HAL Mock)</text>
+    <!-- Attributes -->
+    <text x="15" y="55" fill="#f43f5e" font-size="11" font-family="monospace">- queue&lt;wms_scan_event_t&gt; eventQueue_</text>
+    <text x="15" y="70" fill="#f43f5e" font-size="11" font-family="monospace">- mutex mutex_ / condition_variable cv_</text>
+    <text x="15" y="85" fill="#f43f5e" font-size="11" font-family="monospace">- vector&lt;bool&gt; bayLocks_ (24 bays)</text>
+    <line x1="0" y1="95" x2="320" y2="95" stroke="#334155" stroke-width="1"/>
+    <!-- Methods -->
+    <text x="15" y="115" fill="#94a3b8" font-size="11" font-family="monospace">+ readEvent(...) : bool (cv.wait_for)</text>
+    <text x="15" y="135" fill="#94a3b8" font-size="11" font-family="monospace">+ simulateScan(ev) : bool (queue.push)</text>
+    <text x="15" y="155" fill="#94a3b8" font-size="11" font-family="monospace">+ setBayLock(id, lock) : bool</text>
+  </g>
+
+  <!-- Inheritance Arrows -->
+  <path d="M 220 390 L 220 330" stroke="#38bdf8" stroke-width="2" stroke-dasharray="4,4"/>
+  <polygon points="220,330 215,342 225,342" fill="#1e293b" stroke="#38bdf8" stroke-width="2"/>
+
+  <!-- 4. InventoryManager -->
+  <g transform="translate(440, 100)" filter="url(#shadow)">
+    <rect width="320" height="230" rx="8" fill="#1e293b" stroke="#10b981" stroke-width="2"/>
+    <rect width="320" height="40" rx="8" fill="url(#grad-core)"/>
+    <text x="160" y="26" text-anchor="middle" fill="#ffffff" font-size="15" font-weight="bold">InventoryManager</text>
+    <!-- Attributes -->
+    <text x="15" y="60" fill="#f43f5e" font-size="11" font-family="monospace">- map&lt;string, WarehouseZone&gt; zones_</text>
+    <text x="15" y="75" fill="#f43f5e" font-size="11" font-family="monospace">- map&lt;uint32_t, StorageBay&gt; bays_</text>
+    <text x="15" y="90" fill="#f43f5e" font-size="11" font-family="monospace">- mutex mutex_ (Thread Safety)</text>
+    <line x1="0" y1="100" x2="320" y2="100" stroke="#334155" stroke-width="1"/>
+    <!-- Methods -->
+    <text x="15" y="120" fill="#94a3b8" font-size="11" font-family="monospace">+ addZone(zone) : void</text>
+    <text x="15" y="140" fill="#94a3b8" font-size="11" font-family="monospace">+ addBay(bay) : void</text>
+    <text x="15" y="160" fill="#94a3b8" font-size="11" font-family="monospace">+ intakeItemFromScan(scan) : opt&lt;bayId&gt;</text>
+    <text x="15" y="180" fill="#94a3b8" font-size="11" font-family="monospace">+ dispatchItem(sku, qty, outBays) : bool</text>
+    <text x="15" y="200" fill="#94a3b8" font-size="11" font-family="monospace">+ setBayLock(bayId, lock) : bool</text>
+    <text x="15" y="220" fill="#94a3b8" font-size="11" font-family="monospace">+ getWarehouseOccupancyRate() : float</text>
+  </g>
+
+  <!-- 5. WarehouseZone -->
+  <g transform="translate(440, 390)" filter="url(#shadow)">
+    <rect width="320" height="150" rx="8" fill="#1e293b" stroke="#10b981" stroke-width="1.5"/>
+    <rect width="320" height="35" rx="8" fill="#047857"/>
+    <text x="160" y="23" text-anchor="middle" fill="#ffffff" font-size="14" font-weight="bold">WarehouseZone</text>
+    <text x="15" y="55" fill="#f43f5e" font-size="11" font-family="monospace">- string zoneId_ (ZONE-A/B/C)</text>
+    <text x="15" y="70" fill="#f43f5e" font-size="11" font-family="monospace">- ItemCategory allowedCategory_</text>
+    <text x="15" y="85" fill="#f43f5e" font-size="11" font-family="monospace">- map&lt;uint32_t, StorageBay&gt; bays_</text>
+    <line x1="0" y1="95" x2="320" y2="95" stroke="#334155" stroke-width="1"/>
+    <text x="15" y="115" fill="#94a3b8" font-size="11" font-family="monospace">+ addBay(bay) : void</text>
+    <text x="15" y="135" fill="#94a3b8" font-size="11" font-family="monospace">+ getOccupancyPercentage() : float</text>
+  </g>
+
+  <!-- 6. StorageBay -->
+  <g transform="translate(440, 580)" filter="url(#shadow)">
+    <rect width="320" height="200" rx="8" fill="#1e293b" stroke="#10b981" stroke-width="1.5"/>
+    <rect width="320" height="35" rx="8" fill="#047857"/>
+    <text x="160" y="23" text-anchor="middle" fill="#ffffff" font-size="14" font-weight="bold">StorageBay</text>
+    <text x="15" y="55" fill="#f43f5e" font-size="11" font-family="monospace">- uint32_t bayId_ (1..24)</text>
+    <text x="15" y="70" fill="#f43f5e" font-size="11" font-family="monospace">- float maxWeightKg_ / currentWeight_</text>
+    <text x="15" y="85" fill="#f43f5e" font-size="11" font-family="monospace">- bool isLocked_ (Solenoid Interlock)</text>
+    <text x="15" y="100" fill="#f43f5e" font-size="11" font-family="monospace">- bool isOccupied_</text>
+    <text x="15" y="115" fill="#f43f5e" font-size="11" font-family="monospace">- optional&lt;Item&gt; storedItem_</text>
+    <line x1="0" y1="125" x2="320" y2="125" stroke="#334155" stroke-width="1"/>
+    <text x="15" y="145" fill="#94a3b8" font-size="11" font-family="monospace">+ canAccommodate(item) : bool</text>
+    <text x="15" y="165" fill="#94a3b8" font-size="11" font-family="monospace">+ depositItem(item) : bool</text>
+    <text x="15" y="185" fill="#94a3b8" font-size="11" font-family="monospace">+ retrieveItem() : opt&lt;Item&gt;</text>
+  </g>
+
+  <!-- Composition & Association Lines -->
+  <line x1="600" y1="330" x2="600" y2="390" stroke="#10b981" stroke-width="2"/>
+  <polygon points="600,330 595,340 605,340" fill="#10b981"/>
+  <line x1="600" y1="540" x2="600" y2="580" stroke="#10b981" stroke-width="2"/>
+  <polygon points="600,540 595,550 605,550" fill="#10b981"/>
+
+  <!-- 7. OrderProcessor -->
+  <g transform="translate(800, 100)" filter="url(#shadow)">
+    <rect width="250" height="170" rx="8" fill="#1e293b" stroke="#a855f7" stroke-width="1.5"/>
+    <rect width="250" height="35" rx="8" fill="url(#grad-sys)"/>
+    <text x="125" y="23" text-anchor="middle" fill="#ffffff" font-size="14" font-weight="bold">OrderProcessor</text>
+    <text x="15" y="55" fill="#f43f5e" font-size="11" font-family="monospace">- InventoryManager&amp; inv_</text>
+    <text x="15" y="70" fill="#f43f5e" font-size="11" font-family="monospace">- vector&lt;Order&gt; orders_</text>
+    <text x="15" y="85" fill="#f43f5e" font-size="11" font-family="monospace">- size_t fulfilledCount_</text>
+    <line x1="0" y1="95" x2="250" y2="95" stroke="#334155" stroke-width="1"/>
+    <text x="15" y="115" fill="#94a3b8" font-size="11" font-family="monospace">+ submitOrder(order) : bool</text>
+    <text x="15" y="135" fill="#94a3b8" font-size="11" font-family="monospace">+ processOrder(id) : bool</text>
+    <text x="15" y="155" fill="#94a3b8" font-size="11" font-family="monospace">+ getFulfilledCount() : size_t</text>
+  </g>
+
+  <!-- 8. SharedMemoryState (POSIX IPC) -->
+  <g transform="translate(800, 310)" filter="url(#shadow)">
+    <rect width="250" height="190" rx="8" fill="#1e293b" stroke="#a855f7" stroke-width="1.5"/>
+    <rect width="250" height="35" rx="8" fill="url(#grad-sys)"/>
+    <text x="125" y="23" text-anchor="middle" fill="#ffffff" font-size="14" font-weight="bold">SharedMemoryState</text>
+    <text x="15" y="55" fill="#f43f5e" font-size="11" font-family="monospace">- string shmName_</text>
+    <text x="15" y="70" fill="#f43f5e" font-size="11" font-family="monospace">- int shmFd_ (shm_open)</text>
+    <text x="15" y="85" fill="#f43f5e" font-size="11" font-family="monospace">- WmsSharedTelemetry* ptr_</text>
+    <line x1="0" y1="95" x2="250" y2="95" stroke="#334155" stroke-width="1"/>
+    <text x="15" y="115" fill="#94a3b8" font-size="11" font-family="monospace">+ initialize(isMaster) : bool</text>
+    <text x="15" y="135" fill="#94a3b8" font-size="11" font-family="monospace">+ update(scans, locks...) : void</text>
+    <text x="15" y="155" fill="#94a3b8" font-size="11" font-family="monospace">+ readTelemetry(out) : bool</text>
+    <text x="15" y="175" fill="#94a3b8" font-size="11" font-family="monospace">+ cleanup() : void</text>
+  </g>
+
+  <!-- 9. TerminalDashboard -->
+  <g transform="translate(800, 540)" filter="url(#shadow)">
+    <rect width="250" height="200" rx="8" fill="#1e293b" stroke="#f59e0b" stroke-width="1.5"/>
+    <rect width="250" height="35" rx="8" fill="#d97706"/>
+    <text x="125" y="23" text-anchor="middle" fill="#ffffff" font-size="14" font-weight="bold">TerminalDashboard</text>
+    <text x="15" y="55" fill="#f43f5e" font-size="11" font-family="monospace">- InventoryManager&amp; inv_</text>
+    <text x="15" y="70" fill="#f43f5e" font-size="11" font-family="monospace">- OrderProcessor&amp; orders_</text>
+    <text x="15" y="85" fill="#f43f5e" font-size="11" font-family="monospace">- IDeviceDriver&amp; driver_</text>
+    <line x1="0" y1="95" x2="250" y2="95" stroke="#334155" stroke-width="1"/>
+    <text x="15" y="115" fill="#94a3b8" font-size="11" font-family="monospace">+ renderHeader() : void</text>
+    <text x="15" y="135" fill="#94a3b8" font-size="11" font-family="monospace">+ renderBayGrid() : void</text>
+    <text x="15" y="155" fill="#94a3b8" font-size="11" font-family="monospace">+ renderTelemetryBar() : void</text>
+    <text x="15" y="175" fill="#94a3b8" font-size="11" font-family="monospace">+ renderMenu() : void</text>
+  </g>
+
+  <!-- Cross Connections -->
+  <path d="M 760 170 L 800 170" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="3,3"/>
+  <path d="M 760 250 L 800 370" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="3,3"/>
+  <path d="M 380 200 L 440 200" stroke="#38bdf8" stroke-width="2"/>
+</svg>
