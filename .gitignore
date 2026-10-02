@@ -1,0 +1,24 @@
+# Build artifacts
+build/
+bin/
+*.o
+*.ko
+*.mod
+*.mod.c
+*.mod.o
+*.order
+*.symvers
+.tmp_versions/
+*.cmd
+.cache.mk
+*.d
+
+# OS / IDE
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+
+# Logs
+*.log
