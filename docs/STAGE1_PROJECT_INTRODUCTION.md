@@ -1,7 +1,7 @@
 # Stage 1: Project Introduction & Problem Definition
 
 ## 1. Project Title
-**Warehouse Management System (WMS) Using a Linux Character Device Driver and Modern C++**
+**Warehouse System (WMS) Using a Linux Character Device Driver and Pure C (C11)**
 
 ---
 
@@ -10,9 +10,9 @@ In modern industrial logistics, automated warehousing, and supply chain hubs (In
 
 Conventional pure userspace warehouse applications interact with peripherals via slow, polled serial ports or unbuffered socket streams. This introduces kernel-to-user context switching overhead, potential packet drops during high bursts, and unreliable concurrency control.
 
-This project designs and implements an end-to-end, hybrid industrial **Warehouse Management System (WMS)** bridging **Linux Kernel Space** and **Modern C++ User Space**:
+This project designs and implements an end-to-end, hybrid industrial **Warehouse System (WMS)** bridging **Linux Kernel Space** and **Pure C (C11) User Space**:
 1. **Linux Kernel Character Device Driver (`/dev/wms_driver`)**: Implements an event-driven hardware abstraction layer with interrupt/scan simulation, a thread-safe circular ring buffer, wait queues for non-blocking and asynchronous I/O (`poll`/`epoll`), and custom `ioctl` commands for hardware telemetry and bay lock control.
-2. **System Programming & Modern C++ Application Layer**: Implements a robust multi-threaded warehouse controller featuring POSIX shared memory, real-time signal handling, concurrent inventory management, automated order dispatching, and an interactive real-time visual terminal dashboard.
+2. **System Programming & Pure C Application Layer**: Implements a robust multi-threaded warehouse controller featuring POSIX shared memory, real-time signal handling, concurrent inventory management, automated order dispatching, and an interactive real-time visual terminal dashboard.
 
 ---
 
@@ -27,7 +27,7 @@ Traditional warehouse IT stacks often exhibit the following limitations:
 ### 3.2 The Solution
 By implementing a dedicated **Linux Character Device Driver**, the operating system kernel directly manages hardware event buffering, hardware status queries, and physical locking primitives:
 - The driver buffers scanner inputs into a kernel-space ring buffer protected by kernel mutexes.
-- The user-space C++ daemon uses asynchronous notifications (`select`/`poll`/`epoll`) or blocking wait-queues to read events instantaneously upon arrival with zero idle CPU burn.
+- The user-space C daemon uses asynchronous notifications (`select`/`poll`/`epoll`) or blocking wait-queues to read events instantaneously upon arrival with zero idle CPU burn.
 - Custom `ioctl` (Input/Output Control) syscalls provide atomic querying of sensor data, tare/calibration of scales, and actuation of physical bay locks.
 
 ---
@@ -43,10 +43,10 @@ By implementing a dedicated **Linux Character Device Driver**, the operating sys
 2. **System Programming & Concurrency**:
    - Utilize POSIX System V/POSIX APIs: Shared Memory (`shm_open`, `mmap`) to broadcast real-time telemetry across multi-process warehouse terminals.
    - Implement robust POSIX Signal Handling (`SIGINT`, `SIGTERM`, `SIGHUP`) for graceful resource deallocation and dynamic config reload.
-   - Multi-threaded worker pool using `std::thread`, `std::mutex`, and `std::condition_variable` for parallel order processing.
+   - Multi-threaded worker pool using POSIX threads (`pthread_create`, `pthread_mutex_t`, `pthread_cond_t`) for parallel order processing.
 
-3. **Domain & Application Architecture (Modern C++17/20)**:
-   - Object-Oriented design modeling Warehouse Zones (Aisle, Rack, Shelf, Bay), Items (SKU, batch, weight, temperature sensitivity), and Dispatch Orders.
+3. **Domain & Application Architecture (Pure C11 Standard)**:
+   - Modular procedural architecture modeling Warehouse Zones (Aisle, Rack, Shelf, Bay), Items (SKU, batch, weight, category), and Dispatch Orders.
    - Clean Hardware Abstraction Layer (HAL) isolating user-space business logic from kernel file descriptors, complete with a hardware simulation fallback mode.
    - Interactive, ANSI-colored real-time console dashboard for warehouse supervisors.
 
@@ -64,7 +64,7 @@ By implementing a dedicated **Linux Character Device Driver**, the operating sys
   - Kernel memory management (kmalloc, kfree, copy_to_user, copy_from_user).
   - IOCTL command interface (`WMS_IOCTL_GET_STATUS`, `WMS_IOCTL_SET_BAY_LOCK`, `WMS_IOCTL_TRIGGER_SCAN`, `WMS_IOCTL_RESET_BUFFER`).
 - **User Space**:
-  - C++17 application compiled with GCC/Clang and CMake.
+  - C11 application compiled with GCC (`-std=c11 -Wall -Wextra -pthread -lrt`) and Make orchestrator.
   - Multi-threaded event listener integrating `poll()` on `/dev/wms_driver`.
   - Inventory management logic (stock intake, automated item allocation, order picking, capacity tracking).
   - POSIX shared memory state publishing for external inspector processes.
@@ -81,7 +81,7 @@ By implementing a dedicated **Linux Character Device Driver**, the operating sys
 
 ### 6.1 Expected Outcomes
 - A fully functional, loadable Linux Kernel Module (`wms_driver.ko`) demonstrating kernel synchronization primitives and device file operations.
-- A compiled C++ Warehouse Management System executable (`wms_daemon` and `wms_cli`) capable of real-time event processing and stock dispatching.
+- A compiled C Warehouse System executable (`wms_app`) capable of real-time event processing and stock dispatching.
 - Measurable performance: sub-millisecond event dispatch latency and zero data loss across concurrent item scans.
 - Complete documentation suite, UML diagrams, test reports, and an automated deployment pipeline.
 

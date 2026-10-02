@@ -1,10 +1,10 @@
 # Stage 4: Initial Implementation & Prototype Report
 
 ## 1. Prototype Milestone Overview
-In Stage 4, the core modules designed in Stage 3 were implemented, establishing the physical and virtual bridge between the Linux Kernel Character Device Driver and the Modern C++ User Space Application:
+In Stage 4, the core modules designed in Stage 3 were implemented, establishing the physical and virtual bridge between the Linux Kernel Character Device Driver and the Pure C (C11) User Space Application:
 - **Kernel Module**: `driver/wms_driver.c`, `driver/wms_driver.h`, `driver/include/wms_ioctl.h`
-- **Hardware Abstraction Layer (HAL)**: `IDeviceDriver`, `LinuxCharDevice`, `SimulatedDevice`
-- **Domain Core**: `StorageBay`, `WarehouseZone`, `InventoryManager`
+- **Hardware Abstraction Layer (HAL)**: `device_driver.h`, `linux_chardev.c`, `simulated_dev.c`
+- **Domain Core**: `storage_bay.c`, `warehouse_zone.c`, `inventory_manager.c`, `order_processor.c`
 - **Initial Verification Prototype**: End-to-end event intake pipeline and bay allocation.
 
 ---
@@ -24,14 +24,14 @@ The kernel driver was implemented as a Loadable Kernel Module (LKM):
 
 ### 2.2 Hardware Abstraction Layer (HAL)
 To guarantee high testability, fault tolerance, and multi-environment portability:
-- **`IDeviceDriver`**: Abstract base class establishing the contract for hardware interaction.
-- **`LinuxCharDevice`**: Concrete implementation utilizing Linux VFS system calls (`open()`, `read()`, `poll()`, `ioctl()`).
-- **`SimulatedDevice`**: Thread-safe in-memory mock driver utilizing `std::mutex` and `std::condition_variable`. In environments without root privileges or with custom host kernels, the application transparently falls back to this simulator without changing a single line of business logic.
+- **`device_driver.h`**: Function pointer interface (`device_driver_ops_t`) establishing the contract for hardware interaction.
+- **`linux_chardev.c`**: Concrete implementation utilizing Linux VFS system calls (`open()`, `read()`, `poll()`, `ioctl()`).
+- **`simulated_dev.c`**: Thread-safe in-memory mock driver utilizing POSIX `pthread_mutex_t` and `pthread_cond_t`. In environments without root privileges or with custom host kernels, the application transparently falls back to this simulator without changing a single line of business logic.
 
 ### 2.3 Warehouse Core Domain
-- **`StorageBay`**: Encapsulates bay states (`EMPTY`, `OCCUPIED`, `LOCKED`, `MAINTENANCE`), weight constraints, and atomic item storage/retrieval.
-- **`WarehouseZone`**: Partitions the facility into specialized physical zones (Zone A: Electronics, Zone B: Cold Storage, Zone C: General/Heavy Cargo).
-- **`InventoryManager`**: Ingests `wms_scan_event_t` from the driver, categorizes cargo based on SKU prefixes and barcode patterns, computes the optimal bay, engages the electromagnetic bay lock during placement, and records stock.
+- **`storage_bay.c`**: Encapsulates bay states (`BAY_STATE_EMPTY`, `BAY_STATE_OCCUPIED`, `BAY_STATE_LOCKED`, `BAY_STATE_MAINTENANCE`), weight constraints, and item storage/retrieval.
+- **`warehouse_zone.c`**: Partitions the facility into specialized physical zones (Zone A: Electronics, Zone B: Cold Storage, Zone C: General/Heavy Cargo).
+- **`inventory_manager.c`**: Ingests `wms_scan_event_t` from the driver, categorizes cargo based on SKU prefixes and barcode patterns, computes the optimal bay, engages the electromagnetic bay lock during placement, and records stock.
 
 ---
 
@@ -44,14 +44,14 @@ Hardware Scan / Injection ──> [Kernel Ring Buffer]
                          [LinuxCharDevice::readEvent] (via poll)
                                     │
                                     ▼
-                       [C++ Worker Thread Loop]
+                       [C Worker Thread Loop]
                                     │
                                     ▼
-                     [InventoryManager::intakeItem]
+                     [inventory_manager_intake_item]
                                     │
-                                    ├─► [HAL: setBayLock(ID, LOCKED)] (ioctl)
+                                    ├─► [HAL: set_bay_lock(ID, true)] (ioctl)
                                     ├─► [Bay State Updated to OCCUPIED]
-                                    └─► [HAL: setBayLock(ID, UNLOCKED)] (ioctl)
+                                    └─► [HAL: set_bay_lock(ID, false)] (ioctl)
 ```
 
 ---
@@ -61,7 +61,7 @@ Hardware Scan / Injection ──> [Kernel Ring Buffer]
 | # | Issue Identified | Root Cause | Engineering Solution |
 |---|---|---|---|
 | 1 | `class_create()` API divergence across Linux kernels | Linux kernel 6.4 removed the first `struct module *owner` argument from `class_create()`. | Added preprocessor conditional `#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)` to support both legacy and modern kernels seamlessly. |
-| 2 | WSL2 Kernel Vermagic Mismatch | WSL2 runs Microsoft's customized kernel (`6.18.33.2-microsoft-standard-WSL2`), while generic distro headers build against `7.0.0-generic`. | Implemented dual-mode HAL: C++ engine auto-detects if `/dev/wms_driver` can be opened; if unavailable, falls back to `SimulatedDevice`, while native Linux targets run the compiled `.ko`. |
+| 2 | WSL2 Kernel Vermagic Mismatch | WSL2 runs Microsoft's customized kernel (`6.18.33.2-microsoft-standard-WSL2`), while generic distro headers build against `7.0.0-generic`. | Implemented dual-mode HAL: C engine auto-detects if `/dev/wms_driver` can be opened; if unavailable, falls back to `simulated_dev.c`, while native Linux targets run the compiled `.ko`. |
 | 3 | Read-side Busy Waiting | Polling without sleeping spikes CPU utilization to 100%. | Integrated kernel wait queues (`wait_event_interruptible`) and userspace `poll()` with timeout, ensuring zero idle CPU consumption. |
 | 4 | Data Alignment across Kernel and Userspace | Structure padding differences between 32-bit/64-bit architectures or compilers. | Enforced `#pragma pack(push, 1)` on shared IOCTL structs (`wms_scan_event_t`, `wms_device_status_t`). |
 
@@ -70,7 +70,7 @@ Hardware Scan / Injection ──> [Kernel Ring Buffer]
 ## 5. Prototype Demonstration Evidence
 During prototype verification:
 1. Driver compilation (`make -C driver`) produced `wms_driver.ko` cleanly.
-2. The C++ application ingested 7 simulated intake events across 3 distinct zones.
+2. The C application ingested 7 simulated intake events across 3 distinct zones.
 3. Bays #1, #2, #3 (Zone A), #9, #10 (Zone B), and #17, #18 (Zone C) were occupied accurately.
 4. Active electromagnetic locks were set and read back via IOCTL.
 

@@ -1,11 +1,11 @@
 # Stage 2: Project Requirements & Development Plan (PRD)
 
 ## 1. Document Control & Overview
-- **Project**: Warehouse Management System (WMS-CharDev)
+- **Project**: Warehouse System (WMS-CharDev - Pure C Edition)
 - **Version**: 1.0.0
 - **Target OS**: Linux (Ubuntu 22.04 / 24.04 LTS, Kernel 5.x / 6.x)
-- **Programming Languages**: C (Kernel Module), Modern C++17 (User-space Engine)
-- **Build System**: GNU Make, CMake 3.20+
+- **Programming Languages**: C (Kernel Module), Pure C (C11 Standard - User-space Engine)
+- **Build System**: GNU Make, GCC
 
 ---
 
@@ -64,13 +64,13 @@
 
 ## 3. Non-Functional Requirements (NFR)
 
-- **NFR-1 (Performance & Latency)**: Event dispatch from driver buffer to C++ inventory handler must take $< 1\text{ ms}$.
-- **NFR-2 (Concurrency & Safety)**: Zero race conditions or deadlocks during concurrent stock updates across multiple worker threads. All shared data protected by RAII locks (`std::lock_guard`, `std::unique_lock`).
+- **NFR-1 (Performance & Latency)**: Event dispatch from driver buffer to C inventory handler must take $< 1\text{ ms}$.
+- **NFR-2 (Concurrency & Safety)**: Zero race conditions or deadlocks during concurrent stock updates across multiple worker threads. All shared data protected by POSIX mutexes (`pthread_mutex_t`).
 - **NFR-3 (Memory Safety & Kernel Stability)**:
   - Driver must have zero kernel memory leaks (verified with `kmemleak`).
-  - C++ codebase must have zero raw pointer ownership leaks (verified with Valgrind / AddressSanitizer).
+  - C codebase must have zero memory leaks or dangling pointers (verified with Valgrind / AddressSanitizer).
 - **NFR-4 (Robust Error Handling)**: Graceful degradation when driver nodes are unmounted or files cannot be opened.
-- **NFR-5 (Modularity & Maintainability)**: Clean separation of concerns adhering to SOLID design principles and separation of Kernel vs. User space.
+- **NFR-5 (Modularity & Maintainability)**: Clean separation of concerns adhering to modular design principles and separation of Kernel vs. User space.
 
 ---
 
@@ -81,7 +81,7 @@
 | Stage 1 | Project Introduction | `docs/STAGE1_PROJECT_INTRODUCTION.md` | Problem definition, motivation, scope, and industry applications |
 | Stage 2 | PRD & Plan | `docs/STAGE2_REQUIREMENTS_PRD.md` | Functional/non-functional requirements, timeline, milestone breakdown |
 | Stage 3 | Architecture & UML | `docs/STAGE3_SYSTEM_ARCHITECTURE.md` | System diagrams, UML Class, Sequence, State diagrams, Git setup |
-| Stage 4 | Initial Prototype | `driver/`, `src/hal/`, `src/core/` | Working kernel character device, initial C++ HAL, prototype intake |
+| Stage 4 | Initial Prototype | `driver/`, `src/hal/`, `src/core/` | Working kernel character device, initial C HAL, prototype intake |
 | Stage 5 | Testing & Integration | `tests/`, `scripts/`, `docs/STAGE5_*` | Test suites, performance benchmarks, concurrency bug fixes |
 | Stage 6 | Final Delivery | Complete source, demo script, docs | End-to-end working system, terminal UI, final project report |
 
@@ -102,7 +102,7 @@ gantt
     Git & Build Environment Setup        :s3b, 2026-10-02, 1d
     section Stage 4: Core Implementation
     Linux Kernel Driver (/dev/wms_driver):s4a, 2026-10-03, 2d
-    C++ HAL & System Daemon Prototype    :s4b, 2026-10-04, 2d
+    C HAL & System Daemon Prototype      :s4b, 2026-10-04, 2d
     section Stage 5: Testing & Quality
     Unit & Integration Test Suite        :s5a, 2026-10-05, 2d
     Stress Testing & Concurrency Tuning  :s5b, 2026-10-06, 1d

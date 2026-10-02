@@ -2,12 +2,12 @@
 
 ## 1. Project Overview & Final Summary
 
-- **Project Title**: Warehouse Management System (WMS) Using a Linux Character Device Driver and Modern C++
-- **Student Project Area**: Linux Device Drivers, System Programming, Operating Systems & C++
+- **Project Title**: Warehouse System (WMS - Pure C Edition) Using a Linux Character Device Driver and C11
+- **Student Project Area**: Linux Device Drivers, POSIX System Programming, Operating Systems & C11
 - **Development Cycle**: 6-Stage Waterfall/Iterative Lifecycle
 - **Status**: Complete, Verified, and Delivered
 
-The project successfully developed a high-performance, industrial-grade Warehouse Management System bridging low-level Linux Kernel space and modern high-level C++ application architecture.
+The project successfully developed a high-performance, industrial-grade Warehouse System bridging low-level Linux Kernel space and robust Pure C (C11) application architecture.
 
 ---
 
@@ -20,14 +20,14 @@ The project successfully developed a high-performance, industrial-grade Warehous
    - Thread-safe circular FIFO buffer (64 slots) protected by kernel `mutex` with wait queues (`wait_event_interruptible`).
    - 5 Custom IOCTL commands for telemetry, bay electromagnetic locks, scan simulation, and buffer resets.
 
-2. **System Programming & Concurrency (POSIX & Modern C++)**:
+2. **System Programming & Concurrency (POSIX & Pure C)**:
    - Non-blocking asynchronous I/O with `poll()` polling on `/dev/wms_driver`.
    - Inter-Process Communication (IPC) using POSIX Shared Memory (`/wms_telemetry_shm`) with zero-copy access for external diagnostic tools.
    - Signal handling (`SIGINT`, `SIGTERM`, `SIGHUP`) ensuring graceful cleanup of hardware locks and memory mappings.
-   - Multi-threaded asynchronous event consumer utilizing `std::thread`, `std::mutex`, and `std::condition_variable`.
+   - Multi-threaded asynchronous event consumer utilizing POSIX threads (`pthread_create`, `pthread_mutex_t`, `pthread_cond_t`).
 
-3. **Domain Logic & Architecture (Modern C++17)**:
-   - Clean Object-Oriented design adhering to SOLID principles.
+3. **Domain Logic & Architecture (Pure C11)**:
+   - Clean modular procedural design with encapsulated state structures and function pointer interfaces (`DeviceDriverOps`).
    - Robust Hardware Abstraction Layer (HAL) with dual-mode support (Native Linux Driver and Fallback Simulated Driver).
    - Zone-based inventory optimization (Electronics, Cold Storage, Heavy Cargo).
    - Automated order intake and fulfillment with hardware safety interlocks (preventing retrieval from locked bays).
@@ -91,38 +91,38 @@ When running `./wms_app --demo` or `make demo`, the system executes the followin
 ## 5. Deliverables & Repository Structure
 
 ```
-warehouse-management-system/
-├── CMakeLists.txt                # C++ CMake configuration
-├── Makefile                      # Top-level unified orchestrator
-├── README.md                     # Comprehensive project guide & manual
+warehouse-system/
+├── Makefile                      # Top-level unified orchestrator (GCC C11)
+├── README.md                     # Master documentation with UML SVG diagrams
 ├── .gitignore                    # Git exclusions
 ├── driver/                       # Linux Character Device Driver
-│   ├── Makefile                  # Kernel build makefile
-│   ├── wms_driver.c              # Kernel module implementation
-│   ├── wms_driver.h              # Kernel driver definitions
+│   ├── Makefile                  # Kernel module makefile
+│   ├── wms_driver.c              # Device driver source (cdev, fops, ioctl)
+│   ├── wms_driver.h              # Kernel driver state structures
 │   └── include/
-│       └── wms_ioctl.h           # Shared IOCTL definitions
-├── include/                      # C++ Header Files
-│   ├── core/                     # Inventory, Bay, Zone, Order
-│   ├── hal/                      # Driver interfaces & wrappers
-│   ├── ipc/                      # Shared Memory & Signals
-│   └── ui/                       # Terminal Dashboard
-├── src/                          # C++ Source Files
-│   ├── core/
-│   ├── hal/
-│   ├── ipc/
-│   ├── ui/
-│   └── main.cpp                  # Entry point
-├── tests/                        # Comprehensive Test Suites
-│   ├── test_inventory.cpp
-│   ├── test_device_driver.cpp
-│   └── test_ipc_signals.cpp
-├── scripts/                      # Utility and automation scripts
+│       └── wms_ioctl.h           # Shared IOCTL codes & structures
+├── include/                      # C Header Files
+│   ├── core/                     # item.h, storage_bay.h, warehouse_zone.h, inventory_manager.h, order_processor.h
+│   ├── hal/                      # device_driver.h, linux_chardev.h, simulated_dev.h
+│   ├── ipc/                      # shared_memory.h, signal_handler.h
+│   └── ui/                       # terminal_ui.h
+├── src/                          # C Implementations
+│   ├── core/                     # storage_bay.c, warehouse_zone.c, inventory_manager.c, order_processor.c
+│   ├── hal/                      # linux_chardev.c, simulated_dev.c
+│   ├── ipc/                      # shared_memory.c, signal_handler.c
+│   ├── ui/                       # terminal_ui.c
+│   └── main.c                    # System entry point
+├── tests/                        # Comprehensive Pure C Test Suite
+│   └── test_runner.c             # 5 unit, integration, and stress test suites
+├── web/                          # Web Visualizer Dashboard
+│   └── index.html                # Interactive 24-bay UI & hardware simulator
+├── scripts/                      # Automation & Utility Scripts
 │   ├── load_driver.sh
 │   ├── unload_driver.sh
 │   ├── simulate_scans.sh
 │   └── run_demo.sh
-└── docs/                         # 6-Stage Complete Academic Reports
+└── docs/                         # Formal 6-Stage Reports
+    ├── images/                   # UML SVG diagrams
     ├── STAGE1_PROJECT_INTRODUCTION.md
     ├── STAGE2_REQUIREMENTS_PRD.md
     ├── STAGE3_SYSTEM_ARCHITECTURE.md
@@ -141,10 +141,10 @@ warehouse-management-system/
 
 ### 6.2 Future Improvements
 - **Direct GPIO / I2C Bus Driver**: Connect physical load-cell sensors (HX711) and RFID readers (RC522) via Raspberry Pi or BeagleBone I2C/SPI interfaces.
-- **RESTful / Web Dashboard**: Extend the C++ daemon with an embedded HTTP/WebSocket server (e.g., `crow` or `uWebSockets`) for a web browser UI.
-- **Database Persistence**: Integrate SQLite or PostgreSQL to persist order histories and bay layouts across reboots.
+- **RESTful / Web Dashboard**: Extend the C daemon with a micro HTTP/WebSocket server or integrate directly with the provided browser dashboard.
+- **Database Persistence**: Integrate SQLite to persist order histories and bay layouts across reboots.
 
 ---
 
 ## 7. Conclusion
-This individual project demonstrates a professional, complete software development lifecycle from initial problem definition to final system presentation. It bridges low-level Linux kernel device driver programming, POSIX system calls, and modern C++ software design into a unified, high-performance industrial application.
+This individual project demonstrates a professional, complete software development lifecycle from initial problem definition to final system presentation. It bridges low-level Linux kernel device driver programming, POSIX system calls, and pure C11 software design into a unified, high-performance industrial application.

@@ -5,13 +5,13 @@
 The Warehouse Management System (WMS) is partitioned into three distinct operational tiers:
 1. **Kernel Tier (Hardware Interface & Driver)**: A Linux Character Device Driver providing hardware abstraction, buffering, lock synchronization, and IOCTL control.
 2. **System Programming Tier (IPC, Signals, HAL)**: Linux system-level primitives including asynchronous polling, POSIX shared memory broadcast, and signal management.
-3. **Application & Domain Tier (Modern C++)**: Object-oriented warehouse domain logic managing storage bays, inventory allocations, order processing, and an interactive dashboard.
+3. **Application & Domain Tier (Pure C11)**: Procedural warehouse domain logic managing storage bays, inventory allocations, order processing, and an interactive dashboard.
 
 ### High-Level System Architecture Diagram
 
 ```mermaid
 graph TD
-    subgraph UserSpace ["User Space (Modern C++17 / POSIX)"]
+    subgraph UserSpace ["User Space (Pure C11 / POSIX)"]
         UI["Terminal Dashboard & CLI\n(ANSI Interactive Console)"]
         
         subgraph CoreEngine ["Warehouse Core Engine"]
@@ -66,15 +66,15 @@ graph TD
 | Component | Layer | Primary Responsibility |
 |---|---|---|
 | `wms_driver.c` | Linux Kernel Space | Manages `/dev/wms_driver`, handles VFS syscalls (`open`, `read`, `write`, `ioctl`, `poll`), thread-safe ring buffer, bay hardware locking. |
-| `wms_ioctl.h` | Shared (C/C++) | Formal protocol contract between kernel and userspace: IOCTL magic numbers, ioctl codes, and payload structs. |
-| `IDeviceDriver` | C++ HAL | Abstract interface defining hardware interaction methods (`connect()`, `readEvent()`, `setBayLock()`, `getStatus()`). |
-| `LinuxCharDevice` | C++ HAL | Concrete driver wrapper opening `/dev/wms_driver`, invoking POSIX `poll()` and `ioctl()`. |
-| `SimulatedDevice` | C++ HAL | In-memory emulator mimicking kernel driver behavior for headless testing and non-root execution. |
-| `InventoryManager` | C++ Core | Thread-safe in-memory warehouse repository tracking zones, racks, bays, and SKUs with atomic capacity checking. |
-| `OrderProcessor` | C++ Core | Processes customer fulfillment orders, validates stock, reserves bays, and dispatches goods. |
-| `SharedMemoryState` | C++ IPC | POSIX shared memory publisher exporting real-time warehouse metrics for monitoring clients. |
-| `SignalDispatcher` | C++ IPC | Handles POSIX signals (`SIGINT`, `SIGTERM`, `SIGHUP`) ensuring graceful shutdown and zero dangling kernel locks. |
-| `TerminalDashboard` | C++ UI | Renders live warehouse layout, real-time event logs, and an interactive menu. |
+| `wms_ioctl.h` | Shared (Kernel/C) | Formal protocol contract between kernel and userspace: IOCTL magic numbers, ioctl codes, and payload structs. |
+| `device_driver.h` | C HAL | DeviceDriverOps function pointer interface defining hardware methods (`init`, `read_event`, `set_bay_lock`, `get_status`). |
+| `linux_chardev.c` | C HAL | Concrete driver wrapper opening `/dev/wms_driver`, invoking POSIX `poll()` and `ioctl()`. |
+| `simulated_dev.c` | C HAL | In-memory emulator mimicking kernel driver behavior for headless testing and non-root execution. |
+| `inventory_manager.c` | C Core | Thread-safe in-memory warehouse repository tracking zones, racks, bays, and SKUs with atomic capacity checking. |
+| `order_processor.c` | C Core | Processes customer fulfillment orders, validates stock, reserves bays, and dispatches goods. |
+| `shared_memory.c` | C IPC | POSIX shared memory publisher exporting real-time warehouse metrics for monitoring clients. |
+| `signal_handler.c` | C IPC | Handles POSIX signals (`SIGINT`, `SIGTERM`, `SIGHUP`) ensuring graceful shutdown and zero dangling kernel locks. |
+| `terminal_ui.c` | C UI | Renders live warehouse layout, real-time event logs, and an interactive menu. |
 
 ---
 
@@ -241,7 +241,7 @@ sequenceDiagram
     autonumber
     actor Scanner as RFID / Barcode Gate
     participant Kernel as Linux Driver (/dev/wms_driver)
-    participant Worker as C++ Worker Thread
+    participant Worker as C Worker Thread (pthread)
     participant HAL as LinuxCharDevice (HAL)
     participant IM as InventoryManager
     participant SHM as POSIX Shared Memory
@@ -297,11 +297,11 @@ stateDiagram-v2
 
 ## 5. Environment Setup & Tooling Configuration
 
-- **Compiler**: GCC 13+ / G++ 13+ with `-std=c++17 -Wall -Wextra -pthread`
+- **Compiler**: GCC 11+ with `-std=c11 -Wall -Wextra -pthread -lrt`
 - **Linux Kernel Source**: `/usr/src/linux-headers-$(uname -r)` or generic kernel headers
-- **Build Orchestrator**: CMake 3.20+ and GNU Make
-- **Testing Framework**: GoogleTest (GTest) and custom assertion suites
-- **Static Analysis & Sanitizers**: Clang-Tidy, AddressSanitizer (`-fsanitize=address`)
+- **Build Orchestrator**: GNU Make orchestrator
+- **Testing Framework**: Native Pure C Test Harness with ANSI color assertions
+- **Static Analysis & Sanitizers**: GCC `-fsanitize=address,undefined` and Valgrind
 
 ---
 
