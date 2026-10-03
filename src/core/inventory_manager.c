@@ -125,6 +125,28 @@ bool inventory_dispatch(InventoryManager* inv, const char* sku, uint32_t* out_cl
     return fulfilled;
 }
 
+bool inventory_dispatch_bay(InventoryManager* inv, uint32_t bay_id, char* out_sku) {
+    if (!inv || bay_id < 1 || bay_id > TOTAL_BAYS) return false;
+
+    pthread_mutex_lock(&inv->lock);
+    StorageBay* bay = &inv->bays[bay_id - 1];
+    bool fulfilled = false;
+
+    if (bay->is_occupied) {
+        if (!bay->is_locked) {
+            if (out_sku) {
+                strncpy(out_sku, bay->stored_item.sku, 31);
+                out_sku[31] = '\0';
+            }
+            bay_clear(bay);
+            fulfilled = true;
+        }
+    }
+
+    pthread_mutex_unlock(&inv->lock);
+    return fulfilled;
+}
+
 bool inventory_set_bay_lock(InventoryManager* inv, uint32_t bay_id, bool lock) {
     if (!inv || bay_id < 1 || bay_id > TOTAL_BAYS) return false;
 

@@ -96,6 +96,23 @@ void test_order_fulfillment_safety(void) {
     assert(res2);
     assert(order_processor_get_fulfilled_count(&op) == 1);
 
+    // Test multi-bay same-SKU dispatch: Bay 1 (87.0 kg) vs Bay 17 (500.0 kg)
+    wms_scan_event_t scan1 = { .event_id = 11, .weight_kg = 87.0f, .source_gate_id = 1 };
+    strcpy(scan1.barcode, "SKU-ELEC-101");
+    int b1 = inventory_intake_from_scan(&inv, &scan1);
+    assert(b1 == 1);
+
+    wms_scan_event_t scan17 = { .event_id = 12, .weight_kg = 500.0f, .source_gate_id = 1 };
+    strcpy(scan17.barcode, "SKU-ELEC-101");
+    int b17 = inventory_intake_from_scan(&inv, &scan17);
+    assert(b17 == 17);
+
+    // Dispatch Bay 17 directly by Bay ID
+    assert(order_processor_submit(&op, "ORD-BAY-17", "Client Direct", "SKU-ELEC-101", 1));
+    assert(order_processor_fulfill_bay(&op, "ORD-BAY-17", 17));
+    assert(inventory_get_bay(&inv, 17)->is_occupied == false); // Bay 17 successfully cleared!
+    assert(inventory_get_bay(&inv, 1)->is_occupied == true);   // Bay 1 still holds 87.0 kg!
+
     order_processor_destroy(&op);
     inventory_destroy(&inv);
     printf("[PASS] OrderProcessor & Safety Interlock Tests Passed!\n");

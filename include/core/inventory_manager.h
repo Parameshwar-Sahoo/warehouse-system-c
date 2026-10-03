@@ -30,6 +30,7 @@ int inventory_intake_from_scan(InventoryManager* inv, const wms_scan_event_t* sc
  * Returns true if fulfilled and records cleared bay ID, false otherwise.
  */
 bool inventory_dispatch(InventoryManager* inv, const char* sku, uint32_t* out_cleared_bay);
+bool inventory_dispatch_bay(InventoryManager* inv, uint32_t bay_id, char* out_sku);
 
 bool inventory_set_bay_lock(InventoryManager* inv, uint32_t bay_id, bool lock);
 float inventory_get_occupancy_rate(InventoryManager* inv);

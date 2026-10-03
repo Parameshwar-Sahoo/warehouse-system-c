@@ -10,7 +10,7 @@ An industrial-grade individual capstone engineering project implemented **entire
 
 ---
 
-## 📑 6-Stage Project Lifecycle & Documentation
+##  6-Stage Project Lifecycle & Documentation
 
 This project follows a rigorous 6-stage engineering development process. Full documentation for each stage is available in the [`docs/`](docs/) directory:
 
@@ -25,7 +25,7 @@ This project follows a rigorous 6-stage engineering development process. Full do
 
 ---
 
-## 🏛️ System Architecture
+## System Architecture
 
 ```
 +-------------------------------------------------------------------------+
@@ -59,7 +59,7 @@ This project follows a rigorous 6-stage engineering development process. Full do
 
 ---
 
-## 📐 UML Diagrams
+##  UML Diagrams
 
 ### 1. UML Class Diagram
 Models the structural modularity, the Hardware Abstraction Layer (HAL) function pointer tables, and the pure C domain data structures:
@@ -231,7 +231,7 @@ stateDiagram-v2
 
 ---
 
-## 🖥️ Interactive Web & Terminal Dashboards
+##  Interactive Web & Terminal Dashboards
 
 1. **Interactive Web Dashboard (`web/index.html`)**:
    - Modern browser-based 24-bay dynamic rack layout with live color coding (Empty, Occupied, Locked).
@@ -244,7 +244,7 @@ stateDiagram-v2
 
 ---
 
-## 🚀 Quick Start Guide
+##  Quick Start Guide
 
 ### 1. Prerequisites (Ubuntu / Linux / WSL2)
 Install the standard build essentials and Linux kernel headers:
@@ -285,7 +285,7 @@ make dashboard
 
 ---
 
-## 🔌 Kernel Device Driver & IOCTL Interface
+##  Kernel Device Driver & IOCTL Interface
 
 The driver exposes the character device node at `/dev/wms_driver`. The shared header [`driver/include/wms_ioctl.h`](driver/include/wms_ioctl.h) defines the hardware control contract:
 
@@ -299,7 +299,7 @@ The driver exposes the character device node at `/dev/wms_driver`. The shared he
 
 ---
 
-## 📁 Repository Directory Structure
+##  Repository Directory Structure
 
 ```
 warehouse-system/
@@ -347,7 +347,7 @@ warehouse-system/
 
 ---
 
-## 👨‍💻 Git Progression & Commits
+##  Git Progression & Commits
 Progressive commits demonstrate continuous evolution across each stage:
 - `Stage 1`: Problem formulation, introduction, and scope definition.
 - `Stage 2`: PRD, functional/non-functional requirements, and project timeline.
@@ -358,5 +358,5 @@ Progressive commits demonstrate continuous evolution across each stage:
 
 ---
 
-## 📄 License
+##  License
 This project is developed as an academic individual engineering project and is licensed under the **GPL-2.0 / MIT Dual License**.

@@ -256,16 +256,142 @@ int main(int argc, char* argv[]) {
                 break;
             }
             case 2: { // Dispatch
-                char sku[32];
-                printf("Enter SKU to dispatch: ");
-                scanf("%31s", sku);
-                order_processor_submit(&order_processor, "ORD-MANUAL", "Client Direct", sku, 1);
-                if (order_processor_fulfill(&order_processor, "ORD-MANUAL")) {
-                    printf("[+] Order fulfilled and item dispatched!\n");
-                } else {
-                    printf("[-] Order failed: Item not in stock or bay locked.\n");
+                char input[32];
+                printf("Enter Bay ID (1 - 24) or Item SKU (e.g. 17 or SKU-ELEC-101): ");
+                if (scanf("%31s", input) != 1) {
+                    break;
                 }
-                usleep(1000000);
+
+                static uint32_t s_order_seq = 1;
+                char* endptr = NULL;
+                long bay_num = strtol(input, &endptr, 10);
+
+                if (*endptr == '\0' && bay_num >= 1 && bay_num <= TOTAL_BAYS) {
+                    // Direct dispatch by Bay ID
+                    uint32_t target_bay = (uint32_t)bay_num;
+                    StorageBay* b = inventory_get_bay(&inventory, target_bay);
+                    if (!b || !b->is_occupied) {
+                        printf("[-] Order failed: Bay #%u is already empty.\n", target_bay);
+                    } else if (b->is_locked) {
+                        printf("[-] Order failed (Safety Interlock): Bay #%u is physically LOCKED!\n", target_bay);
+                    } else {
+                        char sku_name[32];
+                        strncpy(sku_name, b->stored_item.sku, sizeof(sku_name) - 1);
+                        sku_name[sizeof(sku_name) - 1] = '\0';
+                        float weight = b->current_weight_kg;
+
+                        char order_id[32];
+                        snprintf(order_id, sizeof(order_id), "ORD-MANUAL-%u", s_order_seq++);
+                        order_processor_submit(&order_processor, order_id, "Client Direct", sku_name, 1);
+
+                        if (order_processor_fulfill_bay(&order_processor, order_id, target_bay)) {
+                            printf("[+] Order fulfilled: %s (%.1f kg) dispatched from Bay #%u!\n", sku_name, weight, target_bay);
+                            char log_buf[128];
+                            snprintf(log_buf, sizeof(log_buf), "DISPATCH: %s (%.1f kg) <- Bay #%u", sku_name, weight, target_bay);
+                            push_event(&app, log_buf);
+
+                            // Broadcast updated telemetry to POSIX Shared Memory
+                            wms_device_status_t dev_status;
+                            driver_get_status(&driver, &dev_status);
+                            shm_update(&shm, dev_status.total_events_logged, dev_status.active_bay_locks,
+                                       (uint32_t)inventory_get_total_items(&inventory),
+                                       inventory_get_occupancy_rate(&inventory), sku_name);
+                        } else {
+                            printf("[-] Order failed: Could not dispatch Bay #%u.\n", target_bay);
+                        }
+                    }
+                } else {
+                    // Dispatch by SKU
+                    uint32_t matching_bays[TOTAL_BAYS];
+                    float matching_weights[TOTAL_BAYS];
+                    size_t match_count = 0;
+
+                    for (uint32_t b = 1; b <= TOTAL_BAYS; ++b) {
+                        StorageBay* bay = inventory_get_bay(&inventory, b);
+                        if (bay && bay->is_occupied && strcmp(bay->stored_item.sku, input) == 0) {
+                            matching_bays[match_count] = bay->id;
+                            matching_weights[match_count] = bay->current_weight_kg;
+                            match_count++;
+                        }
+                    }
+
+                    if (match_count == 0) {
+                        printf("[-] Order failed: SKU '%s' not found in any bay.\n", input);
+                    } else if (match_count > 1) {
+                        printf("\n[!] Multiple bays found with SKU '%s' (different weights):\n", input);
+                        for (size_t m = 0; m < match_count; ++m) {
+                            StorageBay* b = inventory_get_bay(&inventory, matching_bays[m]);
+                            printf("    -> Bay #%u | Weight: %.1f kg | Status: %s\n",
+                                   matching_bays[m], matching_weights[m],
+                                   b->is_locked ? "LOCKED" : "READY");
+                        }
+                        printf("Enter target Bay ID to dispatch (e.g. %u): ", matching_bays[0]);
+                        uint32_t chosen_bay = 0;
+                        if (scanf("%u", &chosen_bay) == 1) {
+                            bool valid_choice = false;
+                            for (size_t m = 0; m < match_count; ++m) {
+                                if (matching_bays[m] == chosen_bay) {
+                                    valid_choice = true;
+                                    break;
+                                }
+                            }
+
+                            if (!valid_choice) {
+                                printf("[-] Invalid choice! Bay #%u does not hold %s.\n", chosen_bay, input);
+                            } else {
+                                StorageBay* b = inventory_get_bay(&inventory, chosen_bay);
+                                if (b && b->is_locked) {
+                                    printf("[-] Order failed (Safety Interlock): Bay #%u is physically LOCKED!\n", chosen_bay);
+                                } else {
+                                    float weight = b ? b->current_weight_kg : 0.0f;
+                                    char order_id[32];
+                                    snprintf(order_id, sizeof(order_id), "ORD-MANUAL-%u", s_order_seq++);
+                                    order_processor_submit(&order_processor, order_id, "Client Direct", input, 1);
+
+                                    if (order_processor_fulfill_bay(&order_processor, order_id, chosen_bay)) {
+                                        printf("[+] Order fulfilled: %s (%.1f kg) dispatched from Bay #%u!\n", input, weight, chosen_bay);
+                                        char log_buf[128];
+                                        snprintf(log_buf, sizeof(log_buf), "DISPATCH: %s (%.1f kg) <- Bay #%u", input, weight, chosen_bay);
+                                        push_event(&app, log_buf);
+
+                                        // Broadcast updated telemetry to POSIX Shared Memory
+                                        wms_device_status_t dev_status;
+                                        driver_get_status(&driver, &dev_status);
+                                        shm_update(&shm, dev_status.total_events_logged, dev_status.active_bay_locks,
+                                                   (uint32_t)inventory_get_total_items(&inventory),
+                                                   inventory_get_occupancy_rate(&inventory), input);
+                                    } else {
+                                        printf("[-] Order failed: Dispatch failed for Bay #%u.\n", chosen_bay);
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        // Exactly 1 matching bay
+                        uint32_t target_bay = matching_bays[0];
+                        float weight = matching_weights[0];
+                        char order_id[32];
+                        snprintf(order_id, sizeof(order_id), "ORD-MANUAL-%u", s_order_seq++);
+                        order_processor_submit(&order_processor, order_id, "Client Direct", input, 1);
+
+                        if (order_processor_fulfill(&order_processor, order_id)) {
+                            printf("[+] Order fulfilled: %s (%.1f kg) dispatched from Bay #%u!\n", input, weight, target_bay);
+                            char log_buf[128];
+                            snprintf(log_buf, sizeof(log_buf), "DISPATCH: %s (%.1f kg) <- Bay #%u", input, weight, target_bay);
+                            push_event(&app, log_buf);
+
+                            // Broadcast updated telemetry to POSIX Shared Memory
+                            wms_device_status_t dev_status;
+                            driver_get_status(&driver, &dev_status);
+                            shm_update(&shm, dev_status.total_events_logged, dev_status.active_bay_locks,
+                                       (uint32_t)inventory_get_total_items(&inventory),
+                                       inventory_get_occupancy_rate(&inventory), input);
+                        } else {
+                            printf("[-] Order failed: Item not in stock or bay locked.\n");
+                        }
+                    }
+                }
+                usleep(1500000);
                 break;
             }
             case 3: { // Toggle bay lock

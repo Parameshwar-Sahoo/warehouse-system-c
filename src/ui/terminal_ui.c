@@ -89,7 +89,7 @@ void ui_render_event_log(char history[][128], size_t count) {
 void ui_render_menu(void) {
     printf("%s[OPERATIONS MENU]%s\n", ANSI_BOLD, ANSI_RESET);
     printf(" 1) Scan Intake (Trigger Barcode/RFID scan)\n");
-    printf(" 2) Dispatch Order (Pick item from bay)\n");
+    printf(" 2) Dispatch Order (Pick by Bay ID or SKU)\n");
     printf(" 3) Toggle Electromagnetic Bay Lock (ioctl)\n");
     printf(" 4) View Bay Detailed Diagnostics\n");
     printf(" 5) Reset Driver Ring Buffer & Stats (ioctl)\n");

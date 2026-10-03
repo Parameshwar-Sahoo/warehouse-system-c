@@ -63,6 +63,39 @@ bool order_processor_fulfill(OrderProcessor* op, const char* order_id) {
     return result;
 }
 
+bool order_processor_fulfill_bay(OrderProcessor* op, const char* order_id, uint32_t bay_id) {
+    if (!op || !order_id || !op->inv || bay_id < 1 || bay_id > TOTAL_BAYS) return false;
+
+    pthread_mutex_lock(&op->lock);
+    bool result = false;
+
+    for (size_t i = 0; i < op->order_count; ++i) {
+        Order* o = &op->orders[i];
+        if (strcmp(o->order_id, order_id) == 0) {
+            if (o->status == ORDER_FULFILLED) {
+                result = true;
+                break;
+            }
+
+            char cleared_sku[32] = {0};
+            if (inventory_dispatch_bay(op->inv, bay_id, cleared_sku)) {
+                o->status = ORDER_FULFILLED;
+                o->allocated_bay = bay_id;
+                strncpy(o->sku, cleared_sku, sizeof(o->sku) - 1);
+                op->fulfilled_count++;
+                result = true;
+            } else {
+                o->status = ORDER_FAILED;
+                result = false;
+            }
+            break;
+        }
+    }
+
+    pthread_mutex_unlock(&op->lock);
+    return result;
+}
+
 size_t order_processor_get_fulfilled_count(OrderProcessor* op) {
     if (!op) return 0;
     pthread_mutex_lock(&op->lock);
